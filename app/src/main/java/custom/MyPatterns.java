@@ -10,16 +10,21 @@ public class MyPatterns {
     public static final String PDL      = "(([0-9]){2} ){3}(([0-9]){6} )([0-9]){2}";
     public static final String HC       = "(( *[0-9] *){5})[^0-9]*HC[^0-9]*|HC[^0-9]*(( *[0-9] *){5})";
     public static final String HP       = "(( *[0-9] *){5})[^0-9]*HP[^0-9]*|HP[^0-9]*(( *[0-9] *){5})";
+
     public static final String CONSO    = "([^A-Za-z0-9]|[HCPNJ]|\\b)\\d{5}([^0-9]|\\b)";
+
     public static final String NOSERIE  = "(([\\d] *){2}([A-Z] *){2}([\\d] *){6})|(([A-Z] *)([\\d]){6})";
     public static final String NOSERIE2  = "[^0-9]*(\\d{6})[^0-9]*|(([\\d] *){2}([A-Z] *){2}([\\d] *){6})";
-    //"([\\d]{2}[A-z]{2}[\\d]{6})";
+
     public static final Pattern PPDL    = Pattern.compile( PDL);
+
     public static final Pattern PNOSERIE    = Pattern.compile( NOSERIE);
     public static final Pattern PHC     = Pattern.compile( HC );
     public static final Pattern PHP     = Pattern.compile( HP );
+
     public static final Pattern PCONSO     = Pattern.compile( CONSO );
     public static final Pattern PCONSO2     = Pattern.compile( "\\d{5}" );
+
     public static final Pattern Date     = Pattern.compile( "([0-9]{2} ){2}[0-9]{2}" );
     public static final Pattern Date2     = Pattern.compile( "LE [0-9]" );
 
@@ -38,25 +43,20 @@ public class MyPatterns {
     }
     @SuppressLint("LongLogTag")
     public static String TestNOSERIE(String input){
-        //Log.d("OcrDetectorProcessorIn", "wayback  " + input );
         Matcher date = Date.matcher(input);
         Matcher date2 = Date2.matcher(input);
         if(date.find() || date2.find()) {
             return null;
         }
         Matcher m = PNOSERIE.matcher(DeleteSpaces(input));
-        //Log.d("OcrDetectorProcessorIn", "wayback  " + DeleteSpaces(input) );
         return m.find() ?DeleteSpaces(m.group()): null ;
     }
     @SuppressLint("LongLogTag")
     public static String TestCONSO(String input){
         Matcher pm = PCONSO.matcher(DeleteSpaces(input));
-        //Log.d("OcrDetectorProcessorInput", "wayback  " + DeleteSpaces(input) + " " );
         if(pm.find()) {
-            //Log.d("OcrDetectorProcessorInput", "bEFORE Input  " + DeleteSpaces(input) + " " );
             String inter = DeleteSpaces(input).replaceAll("[^\\d.]", "");
             Matcher m = PCONSO2.matcher(inter);
-            //Log.d("OcrDetectorProcessorInput", "Input  " + inter + " find " + m.matches());
             return m.matches() ?m.group(): null ;
         }
         else {
