@@ -38,12 +38,15 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.Toast;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSource;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSourcePreview;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.GraphicOverlay;
+import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
 
@@ -187,6 +190,15 @@ public final class OcrCaptureActivity extends AppCompatActivity {
 
         TextRecognizer textRecognizer = new TextRecognizer.Builder(context).build();
         textRecognizer.setProcessor(new OcrDetectorProcessor(graphicOverlay));
+        try {
+            Bitmap image = BitmapFactory.decodeFile("/home/x1-l/PIMA/digit.bmp");
+            Frame frame = new Frame.Builder().setBitmap( image ).build();
+        }catch (Exception e){
+
+            Log.d("Error", e.getMessage() );
+        }
+        //textRecognizer.detect(frame);
+        //Log.d("OcrDetectorProcessor", image.toString() );
 
         if (!textRecognizer.isOperational()) {
             // Note: The first time that an app using a Vision API is installed on a
