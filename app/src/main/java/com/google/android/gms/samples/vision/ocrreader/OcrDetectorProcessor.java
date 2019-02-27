@@ -56,6 +56,10 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
      */
     @Override
     public void receiveDetections(Detector.Detections<TextBlock> detections) {
+        /*
+        * On compare les y trouvé pour determiner si c'est un champ de la conso
+        * Heure pleine ou Heure creuse
+        * */
         int y_new;
         int y_old=0;
         graphicOverlay.clear();
