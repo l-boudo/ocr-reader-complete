@@ -245,18 +245,26 @@ public final class OcrCaptureActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         startCameraSource();
+        if(preview.getDrawingCache() != null){
 
-        try {
-            //Bitmap image = BitmapFactory.decodeResource(getResources(),R.drawable.digit2);
-            Bitmap image = preview.getBitmap();
-            Frame frame = new Frame.Builder().setBitmap( image ).build();
-            //textRecognizer.detect(frame);
-            Log.d("OcrDetectorProcessorDigit", "taille"+String.valueOf(image.getHeight()));
-            Log.d("OcrDetectorProcessorDigit", String.valueOf(textRecognizer.detect(frame).get(0).getValue()));
-        }catch (Exception e){
+            Log.d("TESTMAP", "Pas null ");
 
-            Log.d("Error", e.getMessage() );
+            //Bitmap image = preview.getBitmap();
+            //Log.d("TESTMAP", "Pas null size "+ cameraSource.getPreviewSize());
+
         }
+
+        //try {
+            //Bitmap image = BitmapFactory.decodeResource(getResources(),R.drawable.digit2);
+            //Bitmap image = preview.getBitmap();
+            //Frame frame = new Frame.Builder().setBitmap( image ).build();
+            //textRecognizer.detect(frame);
+            //Log.d("OcrDetectorProcessorDigit", "taille"+String.valueOf(image.getHeight()));
+            //Log.d("OcrDetectorProcessorDigit", String.valueOf(textRecognizer.detect(frame).get(0).getValue()));
+        //}catch (Exception e){
+
+           // Log.d("Error", e.getMessage() );
+        //s}
 
     }
 
@@ -353,6 +361,9 @@ public final class OcrCaptureActivity extends AppCompatActivity {
         if (cameraSource != null) {
             try {
                 preview.start(cameraSource, graphicOverlay);
+                //Log.d("TESTMAP", "Unable to start camera source. "+ cameraSource);
+                //Bitmap image = preview.getBitmap();
+
 
             } catch (IOException e) {
                 Log.e(TAG, "Unable to start camera source.", e);

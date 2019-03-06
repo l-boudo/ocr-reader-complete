@@ -26,8 +26,11 @@ public class MySurfaceView extends SurfaceView {
 
     public Bitmap getBitmap() {
         setDrawingCacheEnabled(true);
-        //buildDrawingCache(true);
-
+        buildDrawingCache();
+        measure(MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
+                MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED));
+        layout(0, 0, getMeasuredWidth(), getMeasuredHeight());
+        Log.d("BitmapLog", String.valueOf(getMeasuredHeight()));
         final Bitmap bitmap = Bitmap.createBitmap( getDrawingCache() );
         Log.d("BitmapLog", String.valueOf(bitmap));
         setDrawingCacheEnabled(false);
