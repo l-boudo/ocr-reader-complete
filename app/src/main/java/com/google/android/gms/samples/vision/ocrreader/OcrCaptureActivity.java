@@ -46,6 +46,7 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSource;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSourcePreview;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.GraphicOverlay;
+import com.google.android.gms.samples.vision.ocrreader.ui.camera.MyCameraSourcePreview;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
@@ -83,6 +84,7 @@ public final class OcrCaptureActivity extends AppCompatActivity {
     // A TextToSpeech engine for speaking a String value.
     private TextToSpeech tts;
 
+    private TextRecognizer textRecognizer;
     /**
      * Initializes the UI and creates the detector pipeline.
      */
@@ -90,7 +92,6 @@ public final class OcrCaptureActivity extends AppCompatActivity {
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         setContentView(R.layout.ocr_capture);
-
         preview = (CameraSourcePreview) findViewById(R.id.preview);
         graphicOverlay = (GraphicOverlay<OcrGraphic>) findViewById(R.id.graphicOverlay);
 
@@ -179,7 +180,7 @@ public final class OcrCaptureActivity extends AppCompatActivity {
      * Suppressing InlinedApi since there is a check that the minimum version is met before using
      * the constant.
      */
-    @SuppressLint("InlinedApi")
+    @SuppressLint({"InlinedApi", "LongLogTag"})
     private void createCameraSource(boolean autoFocus, boolean useFlash) {
         Context context = getApplicationContext();
 
@@ -188,17 +189,17 @@ public final class OcrCaptureActivity extends AppCompatActivity {
         // graphics for each text block on screen.  The factory is used by the multi-processor to
         // create a separate tracker instance for each text block.
 
-        TextRecognizer textRecognizer = new TextRecognizer.Builder(context).build();
+        textRecognizer = new TextRecognizer.Builder(context).build();
         textRecognizer.setProcessor(new OcrDetectorProcessor(graphicOverlay));
         try {
-            Bitmap image = BitmapFactory.decodeFile("/home/x1-l/PIMA/digit.bmp");
-            Frame frame = new Frame.Builder().setBitmap( image ).build();
+            //Bitmap image = BitmapFactory.decodeResource(getResources(),R.drawable.digit2);
+            //Frame frame = new Frame.Builder().setBitmap( image ).build();
+            //textRecognizer.detect(frame);
+            //Log.d("OcrDetectorProcessorDigit", String.valueOf(textRecognizer.detect(frame).get(0).getValue()));
         }catch (Exception e){
 
             Log.d("Error", e.getMessage() );
         }
-        //textRecognizer.detect(frame);
-        //Log.d("OcrDetectorProcessor", image.toString() );
 
         if (!textRecognizer.isOperational()) {
             // Note: The first time that an app using a Vision API is installed on a
@@ -233,15 +234,30 @@ public final class OcrCaptureActivity extends AppCompatActivity {
                 .setFlashMode(useFlash ? Camera.Parameters.FLASH_MODE_TORCH : null)
                 .setFocusMode(autoFocus ? Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO : null)
                 .build();
+
     }
 
     /**
      * Restarts the camera.
      */
+    @SuppressLint("LongLogTag")
     @Override
     protected void onResume() {
         super.onResume();
         startCameraSource();
+
+        try {
+            //Bitmap image = BitmapFactory.decodeResource(getResources(),R.drawable.digit2);
+            Bitmap image = preview.getBitmap();
+            Frame frame = new Frame.Builder().setBitmap( image ).build();
+            //textRecognizer.detect(frame);
+            Log.d("OcrDetectorProcessorDigit", "taille"+String.valueOf(image.getHeight()));
+            Log.d("OcrDetectorProcessorDigit", String.valueOf(textRecognizer.detect(frame).get(0).getValue()));
+        }catch (Exception e){
+
+            Log.d("Error", e.getMessage() );
+        }
+
     }
 
     /**
@@ -323,6 +339,7 @@ public final class OcrCaptureActivity extends AppCompatActivity {
      * (e.g., because onResume was called before the camera source was created), this will be called
      * again when the camera source is created.
      */
+    @SuppressLint("LongLogTag")
     private void startCameraSource() throws SecurityException {
         // check that the device has play services available.
         int code = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(
@@ -336,6 +353,7 @@ public final class OcrCaptureActivity extends AppCompatActivity {
         if (cameraSource != null) {
             try {
                 preview.start(cameraSource, graphicOverlay);
+
             } catch (IOException e) {
                 Log.e(TAG, "Unable to start camera source.", e);
                 cameraSource.release();

@@ -18,6 +18,7 @@ package com.google.android.gms.samples.vision.ocrreader.ui.camera;
 import android.Manifest;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.support.annotation.RequiresPermission;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -29,11 +30,13 @@ import com.google.android.gms.common.images.Size;
 
 import java.io.IOException;
 
+import custom.MySurfaceView;
+
 public class CameraSourcePreview extends ViewGroup {
     private static final String TAG = "CameraSourcePreview";
 
     private Context context;
-    private SurfaceView surfaceView;
+    private MySurfaceView surfaceView;
     private boolean startRequested;
     private boolean surfaceAvailable;
     private CameraSource cameraSource;
@@ -46,7 +49,7 @@ public class CameraSourcePreview extends ViewGroup {
         startRequested = false;
         surfaceAvailable = false;
 
-        surfaceView = new SurfaceView(context);
+        surfaceView = new MySurfaceView(context);
         surfaceView.getHolder().addCallback(new SurfaceCallback());
         addView(surfaceView);
     }
@@ -199,5 +202,8 @@ public class CameraSourcePreview extends ViewGroup {
 
         Log.d(TAG, "isPortraitMode returning false by default");
         return false;
+    }
+    public Bitmap getBitmap(){
+        return surfaceView.getBitmap();
     }
 }
