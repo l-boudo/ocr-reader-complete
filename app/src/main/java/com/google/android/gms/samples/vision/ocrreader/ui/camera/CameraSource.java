@@ -19,6 +19,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -38,6 +39,11 @@ import com.google.android.gms.common.images.Size;
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.Frame;
 
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.imgproc.Imgproc;
+
 import java.io.IOException;
 import java.lang.Thread.State;
 import java.lang.annotation.Retention;
@@ -53,7 +59,7 @@ import java.util.Map;
 
 /**
  * Manages the camera in conjunction with an underlying
- * {@link com.google.android.gms.vision.Detector}.  This receives preview frames from the camera at
+ * {@link Detector}.  This receives preview frames from the camera at
  * a specified rate, sending those frames to the detector as fast as it is able to process those
  * frames.
  * <p/>
@@ -879,8 +885,8 @@ public class CameraSource {
         private Size mPreview;
         private Size mPicture;
 
-        public SizePair(android.hardware.Camera.Size previewSize,
-                        android.hardware.Camera.Size pictureSize) {
+        public SizePair(Camera.Size previewSize,
+                        Camera.Size pictureSize) {
             mPreview = new Size(previewSize.width, previewSize.height);
             if (pictureSize != null) {
                 mPicture = new Size(pictureSize.width, pictureSize.height);
@@ -908,18 +914,18 @@ public class CameraSource {
      */
     private static List<SizePair> generateValidPreviewSizeList(Camera camera) {
         Camera.Parameters parameters = camera.getParameters();
-        List<android.hardware.Camera.Size> supportedPreviewSizes =
+        List<Camera.Size> supportedPreviewSizes =
                 parameters.getSupportedPreviewSizes();
-        List<android.hardware.Camera.Size> supportedPictureSizes =
+        List<Camera.Size> supportedPictureSizes =
                 parameters.getSupportedPictureSizes();
         List<SizePair> validPreviewSizes = new ArrayList<>();
-        for (android.hardware.Camera.Size previewSize : supportedPreviewSizes) {
+        for (Camera.Size previewSize : supportedPreviewSizes) {
             float previewAspectRatio = (float) previewSize.width / (float) previewSize.height;
 
             // By looping through the picture sizes in order, we favor the higher resolutions.
             // We choose the highest resolution in order to support taking the full resolution
             // picture later.
-            for (android.hardware.Camera.Size pictureSize : supportedPictureSizes) {
+            for (Camera.Size pictureSize : supportedPictureSizes) {
                 float pictureAspectRatio = (float) pictureSize.width / (float) pictureSize.height;
                 if (Math.abs(previewAspectRatio - pictureAspectRatio) < ASPECT_RATIO_TOLERANCE) {
                     validPreviewSizes.add(new SizePair(previewSize, pictureSize));
@@ -933,7 +939,7 @@ public class CameraSource {
         // still account for it.
         if (validPreviewSizes.size() == 0) {
             Log.w(TAG, "No preview sizes have a corresponding same-aspect-ratio picture size");
-            for (android.hardware.Camera.Size previewSize : supportedPreviewSizes) {
+            for (Camera.Size previewSize : supportedPreviewSizes) {
                 // The null picture size will let us know that we shouldn't set a picture size.
                 validPreviewSizes.add(new SizePair(previewSize, null));
             }
@@ -1009,7 +1015,7 @@ public class CameraSource {
 
         int angle;
         int displayAngle;
-        if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+        if (cameraInfo.facing == CameraInfo.CAMERA_FACING_FRONT) {
             angle = (cameraInfo.orientation + degrees) % 360;
             displayAngle = (360 - angle); // compensate for it being mirrored
         } else {  // back-facing
@@ -1064,6 +1070,7 @@ public class CameraSource {
         @Override
         public void onPreviewFrame(byte[] data, Camera camera) {
             frameProcessor.setNextFrame(data, camera);
+            //TODO : Ajouter le pre-process du frame et voir comment acceder au detector
         }
     }
 
@@ -1206,6 +1213,29 @@ public class CameraSource {
 
                 try {
                     mDetector.receiveFrame(outputFrame);
+                    // Mon code
+                    // TODO : Ajouter le tratement (Gaussien etc)
+                    /**
+                     * METHODOLOGIE :
+                     * 1) Detecter les contours
+                     * 2) Recupéré la zone detecté
+                     * 3) Effectuer un flou
+                     * 4) Renvoyé l'image dans le recieve Frame
+                     * */
+                    Bitmap image = outputFrame.getBitmap();
+
+
+                    Mat matrice = new Mat();
+                    Utils.bitmapToMat(image,matrice);
+                    Mat canny  = doCanny(matrice);
+
+
+                    Mat grey = new Mat();
+                    Imgproc.cvtColor(matrice,grey,Imgproc.COLOR_BGR2GRAY);
+
+                    Log.d("Frame", String.valueOf( mDetector.detect(outputFrame).get(0)) );
+                    // ajouter dans une liste que l'on fera passer en parametre // ou faire un output frame ?
+                    // Mon code
                 } catch (Throwable t) {
                     Log.e(TAG, "Exception thrown from receiver.", t);
                 } finally {
@@ -1213,5 +1243,37 @@ public class CameraSource {
                 }
             }
         }
+    }
+    private Mat doCanny(Mat frame) {
+        // init
+        int threshold = 50;
+        Mat grayImage = new Mat();
+        Mat detectedEdges = new Mat();
+
+        // convert to grayscale
+        Imgproc.cvtColor(frame, grayImage, Imgproc.COLOR_BGR2GRAY);
+
+        // reduce noise with a 3x3 kernel
+        Imgproc.blur(grayImage, detectedEdges, new org.opencv.core.Size(5, 5) );
+
+        // canny detector, with ratio of lower:upper threshold of 3:1
+        Imgproc.Canny(detectedEdges, detectedEdges, 50, 200,255);
+
+        // using Canny's output as a mask, display the result
+        Mat dest = new Mat();
+        frame.copyTo(dest, detectedEdges);
+
+        return dest;
+    }
+
+    private void getRect(Mat frame){
+        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+        Mat hierachy = new Mat();
+        Imgproc.findContours(frame.clone(),contours,hierachy,Imgproc.RETR_EXTERNAL,Imgproc.CHAIN_APPROX_SIMPLE);
+        /**TODO:Faire un tri dans l'ordre décroissant
+         * TODO:Comparer les "formes" trouvées, recupérer le plus grand rectangle
+         *
+        */
+
     }
 }
