@@ -31,7 +31,7 @@ import custom.MyPatterns;
  */
 public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
 
-    public static final boolean MY_PATTERN = true;
+    public static final boolean MY_PATTERN = false;
     public static final boolean TEST = false;
     private GraphicOverlay<OcrGraphic> graphicOverlay;
     private GraphicOverlay<OcrGraphic> graphicOverlayHC;
