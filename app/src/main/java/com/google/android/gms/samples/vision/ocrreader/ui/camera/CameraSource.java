@@ -40,8 +40,11 @@ import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.Frame;
 
 import org.opencv.android.Utils;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
@@ -50,6 +53,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1266,7 +1270,7 @@ public class CameraSource {
         return dest;
     }
 
-    private void getRect(Mat frame){
+    private void getLCD(Mat frame){
         List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
         Mat hierachy = new Mat();
         Imgproc.findContours(frame.clone(),contours,hierachy,Imgproc.RETR_EXTERNAL,Imgproc.CHAIN_APPROX_SIMPLE);
@@ -1274,6 +1278,114 @@ public class CameraSource {
          * TODO:Comparer les "formes" trouvées, recupérer le plus grand rectangle
          *
         */
+        MatOfPoint2f displayCnts = null;
+        double peri;
+        //approx = Imgproc.approxPolyDP();
+        MatOfPoint2f c2f = new MatOfPoint2f();
+        MatOfPoint2f approx = new MatOfPoint2f();
+        for (MatOfPoint c : contours){
+            c.convertTo(c2f, CvType.CV_32F);
+            peri = Imgproc.arcLength(c2f,true);
+            Imgproc.approxPolyDP(c2f,approx,0.05*peri,true);
+            //(approx.toArray()).length;
+            if (approx.total() == 4){
+                displayCnts = c2f;
+                break;
+            }
+        }
+        if (displayCnts != null){
+            MatOfPoint2f approx_sorted = orderPoints(displayCnts);
+            four_point_transform(frame,approx_sorted);
+        }
+    }
+    /**
+     * The function takes a MatOfPoints2f and sorts it in clockwise order (begins with the topLeft corner)
+     * @param points the original points's unsorted matrix
+     * @return a sorted MatofPoint2f
+     * */
+    private MatOfPoint2f orderPoints(MatOfPoint2f points){
 
+        //We create Two matrixes :
+        //To Browse through the points
+        Point[] lpoints = points.toArray();
+
+        //To get the TopLeft and BottomRight point with the sum
+        double[] lpointc = new double[4];
+
+        ArrayList<Integer> indexes = new ArrayList<Integer>();
+        indexes.add(1);indexes.add(2);indexes.add(3);indexes.add(4);
+        int bottomRight=0;
+        int topLeft=0;
+        int topRight=0;
+        int bottomLeft=0;
+
+        double max = -1000;
+        double min = 1000;
+
+        for (int i = 0;i<4;i++){
+            lpointc[i] = lpoints[i].x + lpoints[i].y;
+            if (max<=lpointc[i]){
+                bottomRight = i;
+                max = lpointc[i];
+            }
+            else if(min>=lpointc[i]){
+                topLeft = i;
+                min = lpointc[i];
+            }
+        }
+        indexes.remove(bottomRight);indexes.remove(topLeft);
+        int index1 = indexes.get(0);
+        int index2 = indexes.get(1);
+        double i1 = Math.abs(lpointc[index1] = lpoints[index1].x - lpoints[index1].y);
+        double i2 = Math.abs(lpointc[index2] = lpoints[index2].x - lpoints[index2].y);
+        if (i1<=i2){
+            topRight = index1;
+            bottomLeft = index2;
+        }
+        else{
+            topRight = index2;
+            bottomLeft = index1;
+        }
+        Point[] newpPoint = {lpoints[topLeft],lpoints[topRight],lpoints[bottomRight],lpoints[bottomLeft]};
+        return new MatOfPoint2f(newpPoint);
+    }
+    /**
+     * We get the image cropped with the points given in argument
+     * @param frame the original image
+     * @param points points which delimit the the part to crop
+     * @return a copy of the original image but cropped
+     * */
+    private Mat four_point_transform(Mat frame, MatOfPoint2f points){
+        Point[] lpoints = points.toArray();
+
+        Point tl = lpoints[0];
+        Point tr = lpoints[1];
+        Point br = lpoints[2];
+        Point bl = lpoints[3];
+
+        double widthA,widthB ;
+        widthA = Math.sqrt( Math.pow(br.x+bl.x,2) + Math.pow(br.y+bl.y,2) );
+        widthB = Math.sqrt( Math.pow(tr.x+tl.x,2) + Math.pow(tr.y+tl.y,2) );
+        int maxWidth = Math.max((int) widthA, (int) widthB);
+
+        double heightA,heightB ;
+        heightA = Math.sqrt( Math.pow(tr.x+br.x,2) + Math.pow(tr.y+br.y,2) );
+        heightB = Math.sqrt( Math.pow(tl.x+bl.x,2) + Math.pow(tl.y+bl.y,2) );
+        int maxHeight = Math.max( (int) heightA, (int) heightB);
+
+        org.opencv.core.Size mySize = new org.opencv.core.Size(maxWidth,maxHeight);
+        Mat warped = new Mat();
+        Mat dst_mat = new Mat(4,1,CvType.CV_32F);
+        Mat src_mat = new Mat(4,1,CvType.CV_32F);
+
+        src_mat.put(0,0,lpoints[0].x,lpoints[0].y,lpoints[1].x,lpoints[1].y,lpoints[2].x,lpoints[2].y,lpoints[3].x,lpoints[3].y);
+        dst_mat.put(0,0,0.0,0.0,maxWidth-1.0,0.0, maxWidth-1.0,maxHeight-1.0,0.0,maxHeight-1.0);
+
+        Mat M = Imgproc.getPerspectiveTransform(src_mat,dst_mat);
+
+        Mat frame_clone = frame.clone();
+        Imgproc.warpPerspective(frame_clone,warped,M,mySize);
+
+        return frame_clone;
     }
 }
