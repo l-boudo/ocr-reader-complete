@@ -20,6 +20,7 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -1207,6 +1208,73 @@ public class CameraSource {
                     // Hold onto the frame data locally, so that we can use this for detection
                     // below.  We need to clear mPendingFrameData to ensure that this buffer isn't
                     // recycled back to the camera before we are done using that data.
+                    if(true) {
+
+                        byte[] data2 = new byte[mPendingFrameData.capacity()];
+                        ((ByteBuffer) mPendingFrameData.duplicate().clear()).get(data2);
+                        Mat mat = new Mat(480, 640, CvType.CV_8U);
+                        mat.put(0, 0, data2);
+                        Log.d("OutcvPend", " "+mPendingFrameData);
+
+                        mPendingFrameData.rewind();
+                        outputFrame.getBitmap();
+                        Log.d("OpencvTest", " " + outputFrame.getBitmap());
+                        Bitmap bmp = Bitmap.createBitmap(previewSize.getWidth(), previewSize.getHeight(), Bitmap.Config.ARGB_8888);
+                        bmp.copyPixelsFromBuffer(mPendingFrameData);
+
+                        //byte[] imageBytes= new byte[data];
+                        //data.get(imageBytes);
+                        //Bitmap bmp= BitmapFactory.decodeByteArray(imageBytes,0,imageBytes.length);
+                        Log.d("OpencvTest", "Okai 1");
+                        Log.d("OpencvBmp", " " + bmp);
+                        Log.d("OpencvImageB", " " + mPendingFrameData.remaining());
+                        //Log.d("OpencvIm", " " + imageBytes.length);
+
+                        mDetector.receiveFrame(outputFrame);
+                        // Mon code
+                        // TODO : Ajouter le tratement (Gaussien etc)
+                        /**
+                         * METHODOLOGIE :
+                         * 1) Detecter les contours
+                         * 2) Recupéré la zone detecté
+                         * 3) Effectuer un flou
+                         * 4) Renvoyé l'image dans le recieve Frame
+                         * */
+
+                        Mat image = new Mat();
+                        Mat imageArray = new Mat();
+                        Mat imageArray2;
+                        Mat matrice = new Mat();
+
+                        Utils.bitmapToMat(bmp, image);
+                        //Read image file from vile system
+                        Bitmap out = Bitmap.createBitmap(previewSize.getWidth(), previewSize.getHeight(), Bitmap.Config.ARGB_8888);
+
+                        System.out.println(image);
+                        double heightforresize = 200;
+                        double factor = heightforresize / image.size().height;
+                        double height = image.size().height * factor;
+                        double width = image.size().width * factor;
+
+                        Imgproc.resize(image, imageArray, new org.opencv.core.Size(width, height), 0, 0, Imgproc.INTER_LINEAR);
+
+                        imageArray2 = doCanny(imageArray);
+                        imageArray2 = getLCD(imageArray2, image, factor);
+
+                        Mat grey = new Mat();
+
+                        Log.d("Frame", String.valueOf(mDetector.detect(outputFrame).get(0)));
+                        // ajouter dans une liste que l'on fera passer en parametre // ou faire un output frame ?
+                        Utils.matToBitmap(imageArray2, out);
+                        mDetector.receiveFrame(new Frame.Builder().setBitmap(out).build());
+                    }
+
+                    byte[] data2 = new byte[mPendingFrameData.capacity()];
+                    ((ByteBuffer) mPendingFrameData.duplicate().clear()).get(data2);
+                    Mat mat = new Mat(480, 640, CvType.CV_8U);
+                    mat.put(0, 0, data2);
+                    Log.d("OutcvPend", " "+mPendingFrameData);
+
                     data = mPendingFrameData;
                     mPendingFrameData = null;
                 }
@@ -1216,30 +1284,8 @@ public class CameraSource {
                 // frame.
 
                 try {
+                    //Log.d("Outcv", " "+outputFrame);
                     mDetector.receiveFrame(outputFrame);
-                    // Mon code
-                    // TODO : Ajouter le tratement (Gaussien etc)
-                    /**
-                     * METHODOLOGIE :
-                     * 1) Detecter les contours
-                     * 2) Recupéré la zone detecté
-                     * 3) Effectuer un flou
-                     * 4) Renvoyé l'image dans le recieve Frame
-                     * */
-                    Bitmap image = outputFrame.getBitmap();
-
-
-                    Mat matrice = new Mat();
-                    Utils.bitmapToMat(image,matrice);
-                    Mat canny  = doCanny(matrice);
-
-
-                    Mat grey = new Mat();
-                    Imgproc.cvtColor(matrice,grey,Imgproc.COLOR_BGR2GRAY);
-
-                    Log.d("Frame", String.valueOf( mDetector.detect(outputFrame).get(0)) );
-                    // ajouter dans une liste que l'on fera passer en parametre // ou faire un output frame ?
-                    // Mon code
                 } catch (Throwable t) {
                     Log.e(TAG, "Exception thrown from receiver.", t);
                 } finally {
@@ -1248,7 +1294,8 @@ public class CameraSource {
             }
         }
     }
-    private Mat doCanny(Mat frame) {
+    //****//
+    private static Mat doCanny(Mat frame) {
         // init
         int threshold = 50;
         Mat grayImage = new Mat();
@@ -1258,96 +1305,15 @@ public class CameraSource {
         Imgproc.cvtColor(frame, grayImage, Imgproc.COLOR_BGR2GRAY);
 
         // reduce noise with a 3x3 kernel
-        Imgproc.blur(grayImage, detectedEdges, new org.opencv.core.Size(5, 5) );
+        Imgproc.blur(grayImage, detectedEdges, new org.opencv.core.Size(7,7) );
 
         // canny detector, with ratio of lower:upper threshold of 3:1
-        Imgproc.Canny(detectedEdges, detectedEdges, 50, 200,255);
-
+        Imgproc.Canny(detectedEdges, detectedEdges, threshold, threshold*3);
         // using Canny's output as a mask, display the result
-        Mat dest = new Mat();
-        frame.copyTo(dest, detectedEdges);
+        //Imgcodecs.imwrite("E:\\opencv\\test.jpg", detectedEdges);
 
-        return dest;
-    }
-
-    private void getLCD(Mat frame){
-        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-        Mat hierachy = new Mat();
-        Imgproc.findContours(frame.clone(),contours,hierachy,Imgproc.RETR_EXTERNAL,Imgproc.CHAIN_APPROX_SIMPLE);
-        /**TODO:Faire un tri dans l'ordre décroissant
-         * TODO:Comparer les "formes" trouvées, recupérer le plus grand rectangle
-         *
-        */
-        MatOfPoint2f displayCnts = null;
-        double peri;
-        //approx = Imgproc.approxPolyDP();
-        MatOfPoint2f c2f = new MatOfPoint2f();
-        MatOfPoint2f approx = new MatOfPoint2f();
-        for (MatOfPoint c : contours){
-            c.convertTo(c2f, CvType.CV_32F);
-            peri = Imgproc.arcLength(c2f,true);
-            Imgproc.approxPolyDP(c2f,approx,0.05*peri,true);
-            //(approx.toArray()).length;
-            if (approx.total() == 4){
-                displayCnts = c2f;
-                break;
-            }
-        }
-        if (displayCnts != null){
-            MatOfPoint2f approx_sorted = orderPoints(displayCnts);
-            four_point_transform(frame,approx_sorted);
-        }
-    }
-    /**
-     * The function takes a MatOfPoints2f and sorts it in clockwise order (begins with the topLeft corner)
-     * @param points the original points's unsorted matrix
-     * @return a sorted MatofPoint2f
-     * */
-    private MatOfPoint2f orderPoints(MatOfPoint2f points){
-
-        //We create Two matrixes :
-        //To Browse through the points
-        Point[] lpoints = points.toArray();
-
-        //To get the TopLeft and BottomRight point with the sum
-        double[] lpointc = new double[4];
-
-        ArrayList<Integer> indexes = new ArrayList<Integer>();
-        indexes.add(1);indexes.add(2);indexes.add(3);indexes.add(4);
-        int bottomRight=0;
-        int topLeft=0;
-        int topRight=0;
-        int bottomLeft=0;
-
-        double max = -1000;
-        double min = 1000;
-
-        for (int i = 0;i<4;i++){
-            lpointc[i] = lpoints[i].x + lpoints[i].y;
-            if (max<=lpointc[i]){
-                bottomRight = i;
-                max = lpointc[i];
-            }
-            else if(min>=lpointc[i]){
-                topLeft = i;
-                min = lpointc[i];
-            }
-        }
-        indexes.remove(bottomRight);indexes.remove(topLeft);
-        int index1 = indexes.get(0);
-        int index2 = indexes.get(1);
-        double i1 = Math.abs(lpointc[index1] = lpoints[index1].x - lpoints[index1].y);
-        double i2 = Math.abs(lpointc[index2] = lpoints[index2].x - lpoints[index2].y);
-        if (i1<=i2){
-            topRight = index1;
-            bottomLeft = index2;
-        }
-        else{
-            topRight = index2;
-            bottomLeft = index1;
-        }
-        Point[] newpPoint = {lpoints[topLeft],lpoints[topRight],lpoints[bottomRight],lpoints[bottomLeft]};
-        return new MatOfPoint2f(newpPoint);
+        //showResult(detectedEdges);
+        return detectedEdges;
     }
     /**
      * We get the image cropped with the points given in argument
@@ -1355,7 +1321,7 @@ public class CameraSource {
      * @param points points which delimit the the part to crop
      * @return a copy of the original image but cropped
      * */
-    private Mat four_point_transform(Mat frame, MatOfPoint2f points){
+    private static Mat four_point_transform(Mat frame, MatOfPoint2f points){
         Point[] lpoints = points.toArray();
 
         Point tl = lpoints[0];
@@ -1364,28 +1330,170 @@ public class CameraSource {
         Point bl = lpoints[3];
 
         double widthA,widthB ;
-        widthA = Math.sqrt( Math.pow(br.x+bl.x,2) + Math.pow(br.y+bl.y,2) );
-        widthB = Math.sqrt( Math.pow(tr.x+tl.x,2) + Math.pow(tr.y+tl.y,2) );
+        widthA = Math.sqrt( Math.pow(br.x-bl.x,2) + Math.pow(br.y-bl.y,2) );
+        widthB = Math.sqrt( Math.pow(tr.x-tl.x,2) + Math.pow(tr.y-tl.y,2) );
         int maxWidth = Math.max((int) widthA, (int) widthB);
 
         double heightA,heightB ;
-        heightA = Math.sqrt( Math.pow(tr.x+br.x,2) + Math.pow(tr.y+br.y,2) );
-        heightB = Math.sqrt( Math.pow(tl.x+bl.x,2) + Math.pow(tl.y+bl.y,2) );
+        heightA = Math.sqrt( Math.pow(tr.x-br.x,2) + Math.pow(tr.y-br.y,2) );
+        heightB = Math.sqrt( Math.pow(tl.x-bl.x,2) + Math.pow(tl.y-bl.y,2) );
         int maxHeight = Math.max( (int) heightA, (int) heightB);
+        System.out.println("height "+heightA+" "+heightB+" ");
 
         org.opencv.core.Size mySize = new org.opencv.core.Size(maxWidth,maxHeight);
         Mat warped = new Mat();
         Mat dst_mat = new Mat(4,1,CvType.CV_32F);
         Mat src_mat = new Mat(4,1,CvType.CV_32F);
 
-        src_mat.put(0,0,lpoints[0].x,lpoints[0].y,lpoints[1].x,lpoints[1].y,lpoints[2].x,lpoints[2].y,lpoints[3].x,lpoints[3].y);
-        dst_mat.put(0,0,0.0,0.0,maxWidth-1.0,0.0, maxWidth-1.0,maxHeight-1.0,0.0,maxHeight-1.0);
+        int j = 0;
+        for(Point p : lpoints) {
+            j++;
+            System.out.println("point "+j+" "+p+" ");
+        }
+        /*
+         * Height and Width are inverted
+         * */
+        System.out.println("maxeses "+maxWidth+" "+maxHeight+" ");
+        Mat src = new MatOfPoint2f(new Point(lpoints[0].x, lpoints[0].y), new Point(lpoints[1].x, lpoints[1].y), new Point(lpoints[2].x, lpoints[2].y), new Point(lpoints[3].x, lpoints[3].y));
+        Mat dst = new MatOfPoint2f(new Point(0, 0), new Point(maxWidth - 1, 0), new Point(maxWidth- 1, maxHeight - 1), new Point(0, maxHeight - 1));
+        //Mat dst = new MatOfPoint2f(new Point(0, 0), new Point(maxHeight - 1, 0), new Point(maxHeight- 1, maxWidth - 1), new Point(0, maxWidth - 1));
 
-        Mat M = Imgproc.getPerspectiveTransform(src_mat,dst_mat);
+        Mat M = Imgproc.getPerspectiveTransform(src,dst);
 
         Mat frame_clone = frame.clone();
         Imgproc.warpPerspective(frame_clone,warped,M,mySize);
+        //showResult(warped);
 
         return frame_clone;
+    }
+    /**
+     * The function takes a MatOfPoints2f and sorts it in clockwise order (begins with the topLeft corner)
+     * @param points the original points's unsorted matrix
+     * @return a sorted MatofPoint2f
+     * */
+    private static MatOfPoint2f orderPoints(MatOfPoint2f points){
+
+        //We create Two matrixes :
+        //To Browse through the points
+        Point[] lpoints = points.toArray();
+
+        //To get the TopLeft and BottomRight point with the sum
+        double[] lpointc = new double[4];
+        int j = 0;
+        for(Point p : lpoints) {
+            j++;
+            //System.out.println("point "+j+" "+p+" ");
+        }
+
+        ArrayList<Integer> indexes = new ArrayList<Integer>();
+        ArrayList<Integer> indexes2 = new ArrayList<Integer>();
+
+        indexes.add(0);indexes.add(1);indexes.add(2);indexes.add(3);
+        int index2=0;
+        int topLeft=0;
+        int topRight=0;
+        int index1=0;
+
+        double max = -1000;
+        double min = 1000;
+
+        for (int i = 0;i<4;i++){
+            lpointc[i] = lpoints[i].x + lpoints[i].y;
+            //System.out.println("le pt "+i+" => "+lpointc[i]);
+            if (max<=lpointc[i]){
+                topRight = i;
+                max = lpointc[i];
+            }
+            if(min>=lpointc[i]){
+                topLeft = i;
+                min = lpointc[i];
+            }
+        }
+        max = -1;
+        for (int i = 0;i<4;i++){
+            lpointc[i] = lpoints[i].x + lpoints[i].y;
+            //System.out.println("le pt "+i+" => "+lpointc[i]);
+            if( i!= topRight && i!=topLeft) {
+
+                if (max<=lpointc[i]){
+                    index1 = i;
+                    max = lpointc[i];
+                }
+                else {
+                    if(max>lpointc[i]) {
+                        index2=index1;
+                        index2=i;
+                    }else {
+                        index2=index1;
+                        index1=i;
+                    }
+                }
+            }
+
+        }
+
+        /*
+         * the top left corner is the lowest value
+         * the top right the highest
+         * the same for the bottom pointss
+         * */
+
+        Point[] newpPoint = {lpoints[topLeft],lpoints[index1],lpoints[topRight],lpoints[index2]};
+
+        return new MatOfPoint2f(newpPoint);
+    }
+    private static Mat getLCD(Mat image_contours,Mat image,double factor){
+
+
+        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+        Mat hierachy = new Mat();
+        Mat cropped = new Mat();
+        Imgproc.findContours(image_contours.clone(),contours,hierachy,Imgproc.RETR_EXTERNAL,Imgproc.CHAIN_APPROX_SIMPLE);
+        /**TODO:Faire un tri dans l'ordre d�croissant
+         * TODO:Comparer les "formes" trouv�es, recup�rer le plus grand rectangle
+         *
+         */
+        //contours = sortContours(contours);
+        MatOfPoint2f displayCnts = null;
+        double max = 0;
+        double maxcon = 0;
+        double peri = 0;
+        //approx = Imgproc.approxPolyDP();
+        MatOfPoint2f c2f = new MatOfPoint2f();
+        MatOfPoint2f approx = new MatOfPoint2f();
+        System.out.println("nb total de contours :"+contours.size());
+
+        for (MatOfPoint c : contours){
+            c.convertTo(c2f, CvType.CV_32F);
+
+            peri = Imgproc.arcLength(c2f,true);
+            Imgproc.approxPolyDP(c2f,approx,0.05*peri,true);
+            //(approx.toArray()).length;
+            maxcon = Imgproc.contourArea(approx);
+            System.out.println("approx "+approx.total()+" "+maxcon);
+            if(maxcon>max && approx.total() == 4) {
+                System.out.println("Max "+maxcon);
+                max = maxcon;
+                displayCnts = new MatOfPoint2f (approx.clone());
+            }
+        }
+
+
+        if (displayCnts != null){
+            //System.out.println("4x4 "+displayCnts.total());
+            MatOfPoint2f approx_sorted = orderPoints(displayCnts);
+            Point[] approx_points =approx_sorted.toArray();
+            Point[] factored_points =new Point[4];
+
+            for(int i = 0;i<4;i++) {
+                factored_points[i] = new Point(approx_points[i].x/factor,approx_points[i].y/factor);
+            }
+            MatOfPoint2f approx_sorted_factored = new MatOfPoint2f(factored_points);
+            cropped = four_point_transform(image,approx_sorted_factored);
+            //cropped = four_point_transform(image,approx_sorted_factored);
+        }
+        // showResult(cropped);
+
+        return cropped ;
     }
 }

@@ -41,6 +41,11 @@ import android.widget.Toast;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSource;
@@ -85,12 +90,29 @@ public final class OcrCaptureActivity extends AppCompatActivity {
     private TextToSpeech tts;
 
     private TextRecognizer textRecognizer;
+
+    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+        @Override
+        public void onManagerConnected(int status) {
+            switch (status) {
+                case LoaderCallbackInterface.SUCCESS:
+                {
+                    Log.i("OpenCV", "OpenCV loaded successfully");
+                } break;
+                default:
+                {
+                    super.onManagerConnected(status);
+                } break;
+            }
+        }
+    };
     /**
      * Initializes the UI and creates the detector pipeline.
      */
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
+
         setContentView(R.layout.ocr_capture);
         preview = (CameraSourcePreview) findViewById(R.id.preview);
         graphicOverlay = (GraphicOverlay<OcrGraphic>) findViewById(R.id.graphicOverlay);
@@ -244,6 +266,13 @@ public final class OcrCaptureActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (!OpenCVLoader.initDebug()) {
+            Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
+        } else {
+            Log.d("OpenCV", "OpenCV library found inside package. Using it!");
+            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+        }
         startCameraSource();
         if(preview.getDrawingCache() != null){
 
