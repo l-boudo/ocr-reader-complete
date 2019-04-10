@@ -1196,7 +1196,6 @@ public class CameraSource {
                         // loop.
                         return;
                     }
-
                     outputFrame = new Frame.Builder()
                             .setImageData(mPendingFrameData, previewSize.getWidth(),
                                     previewSize.getHeight(), ImageFormat.NV21)
