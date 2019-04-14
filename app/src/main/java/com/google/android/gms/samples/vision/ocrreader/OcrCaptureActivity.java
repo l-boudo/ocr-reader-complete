@@ -37,6 +37,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -90,7 +91,7 @@ public final class OcrCaptureActivity extends AppCompatActivity {
     private TextToSpeech tts;
 
     private TextRecognizer textRecognizer;
-
+    private boolean lock = false;
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -151,6 +152,8 @@ public final class OcrCaptureActivity extends AppCompatActivity {
                     }
                 };
         tts = new TextToSpeech(this.getApplicationContext(), listener);
+
+        final Button lock = findViewById(R.id.button);
     }
 
     /**
