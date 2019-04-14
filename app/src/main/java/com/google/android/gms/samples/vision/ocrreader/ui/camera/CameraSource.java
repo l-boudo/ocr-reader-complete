@@ -27,6 +27,7 @@ import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.os.Build;
 import android.os.SystemClock;
+import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresPermission;
 import android.support.annotation.StringDef;
@@ -1207,28 +1208,13 @@ public class CameraSource {
                     // Hold onto the frame data locally, so that we can use this for detection
                     // below.  We need to clear mPendingFrameData to ensure that this buffer isn't
                     // recycled back to the camera before we are done using that data.
-                    if(true) {
+                    if(false) {
 
                         byte[] data2 = new byte[mPendingFrameData.capacity()];
                         ((ByteBuffer) mPendingFrameData.duplicate().clear()).get(data2);
-                        Mat mat = new Mat(480, 640, CvType.CV_8U);
-                        mat.put(0, 0, data2);
-                        Log.d("OutcvPend", " "+mPendingFrameData);
-
-                        mPendingFrameData.rewind();
-                        outputFrame.getBitmap();
-                        Log.d("OpencvTest", " " + outputFrame.getBitmap());
-                        Bitmap bmp = Bitmap.createBitmap(previewSize.getWidth(), previewSize.getHeight(), Bitmap.Config.ARGB_8888);
-                        bmp.copyPixelsFromBuffer(mPendingFrameData);
-
-                        //byte[] imageBytes= new byte[data];
-                        //data.get(imageBytes);
-                        //Bitmap bmp= BitmapFactory.decodeByteArray(imageBytes,0,imageBytes.length);
-                        Log.d("OpencvTest", "Okai 1");
-                        Log.d("OpencvBmp", " " + bmp);
-                        Log.d("OpencvImageB", " " + mPendingFrameData.remaining());
-                        //Log.d("OpencvIm", " " + imageBytes.length);
-
+                        Mat image = new Mat(previewSize.getWidth(), previewSize.getWidth(), CvType.CV_8U);
+                        image.put(0, 0, data2);
+                        Imgproc.cvtColor(image,image,Imgproc.COLOR_YUV2BGR_NV21);
                         mDetector.receiveFrame(outputFrame);
                         // Mon code
                         // TODO : Ajouter le tratement (Gaussien etc)
@@ -1240,12 +1226,10 @@ public class CameraSource {
                          * 4) Renvoyé l'image dans le recieve Frame
                          * */
 
-                        Mat image = new Mat();
                         Mat imageArray = new Mat();
                         Mat imageArray2;
                         Mat matrice = new Mat();
 
-                        Utils.bitmapToMat(bmp, image);
                         //Read image file from vile system
                         Bitmap out = Bitmap.createBitmap(previewSize.getWidth(), previewSize.getHeight(), Bitmap.Config.ARGB_8888);
 
@@ -1260,19 +1244,27 @@ public class CameraSource {
                         imageArray2 = doCanny(imageArray);
                         imageArray2 = getLCD(imageArray2, image, factor);
 
-                        Mat grey = new Mat();
+                        if (imageArray2.height() != 0) { //bytes !
+                            byte[] buffer = new byte[(int) (imageArray2.total() * imageArray2.channels())];
+                            imageArray2.get(0, 0, buffer);
 
-                        Log.d("Frame", String.valueOf(mDetector.detect(outputFrame).get(0)));
-                        // ajouter dans une liste que l'on fera passer en parametre // ou faire un output frame ?
-                        Utils.matToBitmap(imageArray2, out);
-                        mDetector.receiveFrame(new Frame.Builder().setBitmap(out).build());
+                            ByteBuffer buf = ByteBuffer.wrap(buffer);
+
+                            Frame outputFrame2 = new Frame.Builder()
+                                    .setImageData(buf, (int) imageArray2.size().width,
+                                            (int) imageArray2.size().height, ImageFormat.NV21)
+                                    .setId(mPendingFrameId * 2 + 1)
+                                    .setTimestampMillis(mPendingTimeMillis)
+                                    .setRotation(rotation)
+                                    .build();
+
+                            Log.d("myframe", "height " + imageArray2.size().height + " Width " + imageArray2.size().width);
+                            // ajouter dans une liste que l'on fera passer en parametre // ou faire un output frame ?
+                            //Utils.matToBitmap(imageArray2, out);
+                            //MediaStore.Images.Media.insertImage(context.getContentResolver(),)
+                            mDetector.receiveFrame(outputFrame2);
+                        }
                     }
-
-                    byte[] data2 = new byte[mPendingFrameData.capacity()];
-                    ((ByteBuffer) mPendingFrameData.duplicate().clear()).get(data2);
-                    Mat mat = new Mat(480, 640, CvType.CV_8U);
-                    mat.put(0, 0, data2);
-                    Log.d("OutcvPend", " "+mPendingFrameData);
 
                     data = mPendingFrameData;
                     mPendingFrameData = null;
