@@ -13,4 +13,8 @@
     <string name="ocr_failure">No text captured</string>
     <string name="ocr_error">"Error reading text: %1$s"</string>
     <string name="button">Button</string>
+    <string name="lock">Lock</string>
+    <string name="infos_user">null</string>
+    <string name="placeholder_button">test</string>
+    <string name="unlock">unlock</string>
 </resources>

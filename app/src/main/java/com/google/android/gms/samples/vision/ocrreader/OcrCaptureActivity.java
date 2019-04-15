@@ -38,12 +38,10 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 
 import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 
@@ -52,13 +50,13 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSource;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSourcePreview;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.GraphicOverlay;
-import com.google.android.gms.samples.vision.ocrreader.ui.camera.MyCameraSourcePreview;
-import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
 
 import java.io.IOException;
 import java.util.Locale;
+
+import custom.UserInfo;
 
 /**
  * Activity for the Ocr Detecting app.  This app detects text and displays the value with the
@@ -91,7 +89,13 @@ public final class OcrCaptureActivity extends AppCompatActivity {
     private TextToSpeech tts;
 
     private TextRecognizer textRecognizer;
+
+    // pour savoir si on arrete ou non la capture de données
     private boolean lock = false;
+
+    // TODO: faire un observer etc
+    private UserInfo user;
+
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -117,7 +121,8 @@ public final class OcrCaptureActivity extends AppCompatActivity {
         setContentView(R.layout.ocr_capture);
         preview = (CameraSourcePreview) findViewById(R.id.preview);
         graphicOverlay = (GraphicOverlay<OcrGraphic>) findViewById(R.id.graphicOverlay);
-
+        TextView t = (TextView) findViewById(R.id.infos_user);
+        user = new UserInfo(t);
         // Set good defaults for capturing text.
         boolean autoFocus = true;
         boolean useFlash = false;
@@ -153,7 +158,30 @@ public final class OcrCaptureActivity extends AppCompatActivity {
                 };
         tts = new TextToSpeech(this.getApplicationContext(), listener);
 
-        final Button lock = findViewById(R.id.button);
+        final Button button_lock = findViewById(R.id.lock_button);
+        button_lock.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Code here executes on main thread after user presses button
+                //lock = !lock;
+                //button_lock.setBackgroundTintList();
+                if(user.setLock()){
+                    button_lock.setText("Locked");
+                }else{
+                    button_lock.setText("Unlocked");
+
+                }
+            }
+
+        });
+
+        final Button button_placeholder = findViewById(R.id.placeholder_test);
+        button_placeholder.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Code here executes on main thread after user presses button
+                user.placeholder();
+            }
+
+        });
     }
 
     /**
@@ -215,7 +243,7 @@ public final class OcrCaptureActivity extends AppCompatActivity {
         // create a separate tracker instance for each text block.
 
         textRecognizer = new TextRecognizer.Builder(context).build();
-        textRecognizer.setProcessor(new OcrDetectorProcessor(graphicOverlay));
+        textRecognizer.setProcessor(new OcrDetectorProcessor(graphicOverlay,user));
         try {
             //Bitmap image = BitmapFactory.decodeResource(getResources(),R.drawable.digit2);
             //Frame frame = new Frame.Builder().setBitmap( image ).build();

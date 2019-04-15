@@ -24,6 +24,7 @@ import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.text.TextBlock;
 
 import custom.MyPatterns;
+import custom.UserInfo;
 
 /**
  * A very simple Processor which gets detected TextBlocks and adds them to the overlay
@@ -31,8 +32,9 @@ import custom.MyPatterns;
  */
 public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
 
-    public static final boolean MY_PATTERN = false;
+    public static final boolean MY_PATTERN = true;
     public static final boolean TEST = false;
+    private UserInfo user;
     private GraphicOverlay<OcrGraphic> graphicOverlay;
     private GraphicOverlay<OcrGraphic> graphicOverlayHC;
     private GraphicOverlay<OcrGraphic> graphicOverlayHP;
@@ -42,8 +44,11 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
     private String serie="";
     OcrDetectorProcessor(GraphicOverlay<OcrGraphic> ocrGraphicOverlay) {
         graphicOverlay = ocrGraphicOverlay;
+
+    }
+    OcrDetectorProcessor(GraphicOverlay<OcrGraphic> ocrGraphicOverlay, UserInfo user) {
         graphicOverlay = ocrGraphicOverlay;
-        graphicOverlay = ocrGraphicOverlay;
+        this.user = user;
 
     }
 
@@ -84,6 +89,7 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
                     if (!already) {
                         y_old = item.getCornerPoints()[0].y;
                         conso = Integer.parseInt(text);
+                        //TODO: Recuperer la conso 'normal'
                         already = true;
                     }else{
                         y_new = item.getCornerPoints()[0].y;
@@ -91,11 +97,17 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
                             consoHC = conso;
                             consoHP = Integer.parseInt(text);
 
+
+
+
                         }else {
                             consoHC = Integer.parseInt(text);
                             consoHP = conso;
 
+
                         }
+                        user.setConso_hc(consoHC);
+                        user.setConso_hp(consoHP);
                         already = false;
 
                     }
@@ -110,6 +122,7 @@ public class OcrDetectorProcessor implements Detector.Processor<TextBlock> {
                 else if (MyPatterns.TestNOSERIE(item.getValue()) != null && MY_PATTERN == true && !TEST){
                     text = MyPatterns.TestNOSERIE(item.getValue());
                     serie = text;
+                    user.setNo_serie(text);
                     Log.d("OcrDetectorProcessor", "NOSERIE  " + text);
                     OcrGraphic graphic = new OcrGraphic(graphicOverlay, item,Color.WHITE);
                     graphicOverlay.add(graphic);
