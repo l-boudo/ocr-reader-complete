@@ -17,4 +17,5 @@
     <string name="infos_user">null</string>
     <string name="placeholder_button">test</string>
     <string name="unlock">unlock</string>
+    <string name="add">add</string>
 </resources>

@@ -26,17 +26,28 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
+import android.location.Address;
+
+import android.location.Criteria;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.design.widget.TextInputEditText;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -54,6 +65,7 @@ import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 
 import custom.UserInfo;
@@ -63,8 +75,10 @@ import custom.UserInfo;
  * rear facing camera. During detection overlay graphics are drawn to indicate the position,
  * size, and contents of each TextBlock.
  */
-public final class OcrCaptureActivity extends AppCompatActivity {
+public final class OcrCaptureActivity extends AppCompatActivity implements LocationListener {
     private static final String TAG = "OcrCaptureActivity";
+    int MY_PERMISSION_ACCESS_COARSE_LOCATION = 1;
+    int MY_PERMISSION_ACCESS_FINE_LOCATION = 2;
 
     // Intent request code to handle updating play services if needed.
     private static final int RC_HANDLE_GMS = 9001;
@@ -95,33 +109,99 @@ public final class OcrCaptureActivity extends AppCompatActivity {
 
     // TODO: faire un observer etc
     private UserInfo user;
+    private LocationManager locationManager;
 
+
+    private Location getLastKnownLocation2() {
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        Location oldloc;
+        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+
+            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  },
+                    MY_PERMISSION_ACCESS_COARSE_LOCATION);
+        }
+        if ( ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+
+            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_FINE_LOCATION  },
+                    MY_PERMISSION_ACCESS_FINE_LOCATION);
+        }
+        ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+
+        while (true){
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+            oldloc=locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            Log.i("CRASHED", "ARGH "+oldloc);
+
+            if (oldloc==null){
+                continue;
+
+            }
+            else {
+                break;
+            }
+        }
+        return oldloc;
+    }
+    private Location getLastKnownLocation() {
+        locationManager = (LocationManager)getApplicationContext().getSystemService(LOCATION_SERVICE);
+        List<String> providers = locationManager.getProviders(true);
+        Location bestLocation = null;
+        for (String provider : providers) {
+            if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+
+                ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  },
+                        MY_PERMISSION_ACCESS_COARSE_LOCATION);
+            }
+            if ( ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+
+                ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_FINE_LOCATION  },
+                        MY_PERMISSION_ACCESS_FINE_LOCATION);
+            }
+            Location l = locationManager.getLastKnownLocation(provider);
+            Log.i("CRASHED", "ARGH "+l);
+            if (l == null) {
+                continue;
+            }
+            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
+                // Found best last known location: %s", l);
+                bestLocation = l;
+            }
+        }
+        return bestLocation;
+    }
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
             switch (status) {
-                case LoaderCallbackInterface.SUCCESS:
-                {
+                case LoaderCallbackInterface.SUCCESS: {
                     Log.i("OpenCV", "OpenCV loaded successfully");
-                } break;
-                default:
-                {
+                }
+                break;
+                default: {
                     super.onManagerConnected(status);
-                } break;
+                }
+                break;
             }
         }
     };
+
     /**
      * Initializes the UI and creates the detector pipeline.
      */
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
-
+        //this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        final Context context = getApplicationContext();
         setContentView(R.layout.ocr_capture);
+
         preview = (CameraSourcePreview) findViewById(R.id.preview);
         graphicOverlay = (GraphicOverlay<OcrGraphic>) findViewById(R.id.graphicOverlay);
         TextView t = (TextView) findViewById(R.id.infos_user);
+        
+        //final TextInputLayout ti = (TextInputLayout) findViewById(R.id.adress_input);
+
+        //final TextInputEditText tie = (TextInputEditText) findViewById(R.id.adress_input);
         user = new UserInfo(t);
         // Set good defaults for capturing text.
         boolean autoFocus = true;
@@ -135,6 +215,14 @@ public final class OcrCaptureActivity extends AppCompatActivity {
         } else {
             requestCameraPermission();
         }
+        int rfl = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+        int rcl = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
+        if (rfl == PackageManager.PERMISSION_GRANTED && rcl == PackageManager.PERMISSION_GRANTED) {
+            createCameraSource(autoFocus, useFlash);
+        } else {
+            requestGpsPermission();
+        }
+
 
         gestureDetector = new GestureDetector(this, new CaptureGestureListener());
         scaleGestureDetector = new ScaleGestureDetector(this, new ScaleListener());
@@ -164,12 +252,18 @@ public final class OcrCaptureActivity extends AppCompatActivity {
                 // Code here executes on main thread after user presses button
                 //lock = !lock;
                 //button_lock.setBackgroundTintList();
-                if(user.setLock()){
-                    button_lock.setText("Locked");
-                }else{
-                    button_lock.setText("Unlocked");
+                String text_lock;
+                if (user.setLock()) {
+                    text_lock = "Bloqué";
+                    //button_lock.setText("Locked");
+                } else {
+                    //button_lock.setText("Unlocked");
+                    text_lock = "Débloqué";
 
                 }
+                Snackbar.make(graphicOverlay, "le texte est "+text_lock,
+                        Snackbar.LENGTH_LONG)
+                        .show();
             }
 
         });
@@ -182,6 +276,47 @@ public final class OcrCaptureActivity extends AppCompatActivity {
             }
 
         });
+
+        final Button button_gps = findViewById(R.id.gps_button);
+        button_gps.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Code here executes on main thread after user presses button
+
+                Geocoder geocoder;
+                String bestProvider;
+                List<Address> addresses;
+                double lat;
+                double lng;
+                geocoder = new Geocoder(context, Locale.getDefault());
+                try {
+                    Location loc = getLastKnownLocation();
+                    lat = loc.getLatitude();
+                    lng = loc.getLongitude();
+                    addresses = geocoder.getFromLocation(lat, lng, 1); // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+                    String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+                    String city = addresses.get(0).getLocality();
+                    String state = addresses.get(0).getAdminArea();
+                    String country = addresses.get(0).getCountryName();
+                    String postalCode = addresses.get(0).getPostalCode();
+                    String knownName = addresses.get(0).getFeatureName();
+                    Log.w("Location", " "+address+" "+state+" "+postalCode);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Log.w("Location_Getter", "Location permission is not granted. Requesting permission");
+
+                }
+
+               // tie.setText("39A");
+            }
+
+        });
+        //locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        //locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+    }
+
+    private void requestGpsPermission() {
+
     }
 
     /**
@@ -313,19 +448,6 @@ public final class OcrCaptureActivity extends AppCompatActivity {
             //Log.d("TESTMAP", "Pas null size "+ cameraSource.getPreviewSize());
 
         }
-
-        //try {
-            //Bitmap image = BitmapFactory.decodeResource(getResources(),R.drawable.digit2);
-            //Bitmap image = preview.getBitmap();
-            //Frame frame = new Frame.Builder().setBitmap( image ).build();
-            //textRecognizer.detect(frame);
-            //Log.d("OcrDetectorProcessorDigit", "taille"+String.valueOf(image.getHeight()));
-            //Log.d("OcrDetectorProcessorDigit", String.valueOf(textRecognizer.detect(frame).get(0).getValue()));
-        //}catch (Exception e){
-
-           // Log.d("Error", e.getMessage() );
-        //s}
-
     }
 
     /**
@@ -385,7 +507,10 @@ public final class OcrCaptureActivity extends AppCompatActivity {
             createCameraSource(autoFocus, useFlash);
             return;
         }
-
+        if (requestCode == 1
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            //  gps functionality
+        }
         Log.e(TAG, "Permission not granted: results len = " + grantResults.length +
                 " Result code = " + (grantResults.length > 0 ? grantResults[0] : "(empty)"));
 
@@ -458,6 +583,26 @@ public final class OcrCaptureActivity extends AppCompatActivity {
             Log.d(TAG,"no text detected");
         }
         return text != null;
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
     }
 
     private class CaptureGestureListener extends GestureDetector.SimpleOnGestureListener {

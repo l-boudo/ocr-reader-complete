@@ -13,7 +13,7 @@ public class MyPatterns {
 
     public static final String CONSO    = "([^A-Za-z0-9]|[HCPNJ]|\\b)\\d{5}([^0-9]|\\b)";
 
-    public static final String NOSERIE  = "(([\\d] *){2}([A-Z] *){2}([\\d] *){6})|(([A-Z] *)([\\d]){6})";
+    public static final String NOSERIE  = "( ([\\d] *){2}([A-Z] *){2}([\\d] *){6})|(([A-Z] *)([\\d]){6})|([\\d]{2} *){3} *([\\d]{6} *)([\\d]{2} *)|([\\d]{6} *)([\\d]{6} *)[\\d]{2}";
     public static final String NOSERIE2  = "[^0-9]*(\\d{6})[^0-9]*|(([\\d] *){2}([A-Z] *){2}([\\d] *){6})";
 
     public static final Pattern PPDL    = Pattern.compile( PDL);
@@ -43,16 +43,23 @@ public class MyPatterns {
     }
     @SuppressLint("LongLogTag")
     public static String TestNOSERIE(String input){
+        //Log.d("TESTMATCH", "SERIAL " + input);
+        Matcher m0 = PNOSERIE.matcher(input);
         Matcher date = Date.matcher(input);
         Matcher date2 = Date2.matcher(input);
-        if(date.find() || date2.find()) {
+        if((date.find() || date2.find())&& !m0.find() ) {
+            Log.d("TESTMATCH", "SERIAL " + input);
+
             return null;
         }
+
         Matcher m = PNOSERIE.matcher(DeleteSpaces(input));
         return m.find() ?DeleteSpaces(m.group()): null ;
     }
     @SuppressLint("LongLogTag")
     public static String TestCONSO(String input){
+        Log.d("TESTMATCH", "CONSO " + input);
+
         Matcher pm = PCONSO.matcher(DeleteSpaces(input));
         if(pm.find()) {
             String inter = DeleteSpaces(input).replaceAll("[^\\d.]", "");

@@ -1,12 +1,12 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-8:12
-INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-8:12
-INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-8:12
-INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-8:12
-INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-8:12
-INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-8:12
-INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-8:12
+ADDED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-6:12
+INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-6:12
+INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-6:12
+INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-6:12
+INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-6:12
+INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-6:12
+INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:2:1-6:12
 	package
 		ADDED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:3:7-27
 		INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
@@ -22,16 +22,16 @@ INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr
 		INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
 		INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
 uses-sdk
-ADDED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:7:5-73
-INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:7:5-73
-INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:7:5-73
-INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:7:5-73
-INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:7:5-73
+INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
+INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
+INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
+INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
 	android:targetSdkVersion
-		ADDED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:7:41-70
 		INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
+		ADDED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
 		INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
 	android:minSdkVersion
-		ADDED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml:7:15-40
 		INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
+		ADDED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
 		INJECTED from /home/x1-l/SDK/android-vision-master/visionSamples/ocr-codelab/ocr-reader-complete/opencv/java/AndroidManifest.xml
