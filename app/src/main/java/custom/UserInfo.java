@@ -1,9 +1,11 @@
 package custom;
 
+import android.location.Location;
 import android.widget.TextView;
 
 public class UserInfo {
     private TextView t;
+    private Location location;
     private String no_serie;
     private int conso_hc;
     private int conso_hp;
@@ -72,5 +74,11 @@ public class UserInfo {
     public boolean setLock(){
         lock=!lock;
         return lock;
+    }
+    public void setLocation(Location loc){
+        this.location = loc;
+    }
+    public Location getLocation(){
+        return location;
     }
 }

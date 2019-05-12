@@ -15,7 +15,12 @@
     <string name="button">Button</string>
     <string name="lock">Lock</string>
     <string name="infos_user">null</string>
-    <string name="placeholder_button">test</string>
+    <string name="placeholder_button">Confirm</string>
     <string name="unlock">unlock</string>
     <string name="add">add</string>
+    <string name="gps">GPS</string>
+    <string name="togglebutton">ToggleButton</string>
+    <string name="ulck">ULCK</string>
+    <string name="lck">LCK</string>
+    <string name="adresse">Adresse</string>
 </resources>

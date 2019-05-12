@@ -20,10 +20,10 @@
                 android:layout_height="match_parent"
                 android:baselineAligned="false"
                 android:checked="false"
-                android:text="ToggleButton"
+                android:text="@string/togglebutton"
                 android:textAppearance="@style/TextAppearance.AppCompat"
-                android:textOff="ULCK"
-                android:textOn="LCK"
+                android:textOff="@string/ulck"
+                android:textOn="@string/lck"
                 android:visibility="visible" />
 
             <Button
@@ -33,7 +33,7 @@
                 android:backgroundTint="@color/design_default_color_primary"
                 android:baselineAligned="false"
                 android:text="@string/placeholder_button"
-                tools:text="FILL" />
+                tools:text="Confirm" />
 
             <Button
                 android:id="@+id/gps_button"
@@ -42,7 +42,7 @@
                 android:backgroundTint="@android:color/holo_blue_dark"
                 android:baselineAligned="false"
                 android:elevation="0dp"
-                android:text="GPS"
+                android:text="@string/gps"
                 tools:text="GPS" />
 
         </LinearLayout>

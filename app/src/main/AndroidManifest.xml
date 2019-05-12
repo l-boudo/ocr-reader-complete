@@ -4,6 +4,7 @@
     android:installLocation="auto" >
 
     <uses-feature android:name="android.hardware.camera" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -11,13 +12,14 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:fullBackupContent="false"
         android:hardwareAccelerated="true"
         android:icon="@drawable/icon"
         android:label="OcrReaderApp"
         android:supportsRtl = "true"
-        android:theme="@style/Theme.AppCompat"
+        android:theme="@style/Theme.MaterialComponents.Light"
     >
         <meta-data
             android:name="com.google.android.gms.version"

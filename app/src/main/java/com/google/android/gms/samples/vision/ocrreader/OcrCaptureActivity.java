@@ -27,7 +27,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.location.Address;
-
+//import com.google.android.gms.location.FusedLocationProviderClient
 import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
@@ -42,6 +42,9 @@ import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -49,26 +52,47 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSource;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSourcePreview;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.GraphicOverlay;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import custom.JsonFetcher;
 import custom.UserInfo;
+
+import static com.thejavageek.client.RecherchePointPortTypeClientStatic.recherchePDL;
 
 /**
  * Activity for the Ocr Detecting app.  This app detects text and displays the value with the
@@ -76,15 +100,19 @@ import custom.UserInfo;
  * size, and contents of each TextBlock.
  */
 public final class OcrCaptureActivity extends AppCompatActivity implements LocationListener {
+
     private static final String TAG = "OcrCaptureActivity";
     int MY_PERMISSION_ACCESS_COARSE_LOCATION = 1;
     int MY_PERMISSION_ACCESS_FINE_LOCATION = 2;
+    public static String API_URL2 = "https://public.opendatasoft.com/api/v2/catalog/datasets/correspondance-code-insee-code-postal";
+    public static String API_URL = "https://public.opendatasoft.com/api/v2/catalog/datasets/correspondance-code-insee-code-postal/records?where=";
 
     // Intent request code to handle updating play services if needed.
     private static final int RC_HANDLE_GMS = 9001;
 
     // Permission request codes need to be < 256
     private static final int RC_HANDLE_CAMERA_PERM = 2;
+    private static final int RC_HANDLE_LOCATION_PERM = 3;
 
     // Constants used to pass extra data in the intent
     public static final String AutoFocus = "AutoFocus";
@@ -112,63 +140,8 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
     private LocationManager locationManager;
 
 
-    private Location getLastKnownLocation2() {
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        Location oldloc;
-        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+    private FusedLocationProviderClient fusedLocationClient;
 
-            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  },
-                    MY_PERMISSION_ACCESS_COARSE_LOCATION);
-        }
-        if ( ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
-
-            ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_FINE_LOCATION  },
-                    MY_PERMISSION_ACCESS_FINE_LOCATION);
-        }
-        ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-
-        while (true){
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-            oldloc=locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            Log.i("CRASHED", "ARGH "+oldloc);
-
-            if (oldloc==null){
-                continue;
-
-            }
-            else {
-                break;
-            }
-        }
-        return oldloc;
-    }
-    private Location getLastKnownLocation() {
-        locationManager = (LocationManager)getApplicationContext().getSystemService(LOCATION_SERVICE);
-        List<String> providers = locationManager.getProviders(true);
-        Location bestLocation = null;
-        for (String provider : providers) {
-            if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
-
-                ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_COARSE_LOCATION  },
-                        MY_PERMISSION_ACCESS_COARSE_LOCATION);
-            }
-            if ( ContextCompat.checkSelfPermission( this, Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
-
-                ActivityCompat.requestPermissions( this, new String[] {  android.Manifest.permission.ACCESS_FINE_LOCATION  },
-                        MY_PERMISSION_ACCESS_FINE_LOCATION);
-            }
-            Location l = locationManager.getLastKnownLocation(provider);
-            Log.i("CRASHED", "ARGH "+l);
-            if (l == null) {
-                continue;
-            }
-            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
-                // Found best last known location: %s", l);
-                bestLocation = l;
-            }
-        }
-        return bestLocation;
-    }
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -191,14 +164,19 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
+
         //this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         final Context context = getApplicationContext();
         setContentView(R.layout.ocr_capture);
-
-        preview = (CameraSourcePreview) findViewById(R.id.preview);
-        graphicOverlay = (GraphicOverlay<OcrGraphic>) findViewById(R.id.graphicOverlay);
-        TextView t = (TextView) findViewById(R.id.infos_user);
-        
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        preview = findViewById(R.id.preview);
+        graphicOverlay = findViewById(R.id.graphicOverlay);
+        TextView t = findViewById(R.id.infos_user);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        // Hide ActionBar
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().hide();
+        }
         //final TextInputLayout ti = (TextInputLayout) findViewById(R.id.adress_input);
 
         //final TextInputEditText tie = (TextInputEditText) findViewById(R.id.adress_input);
@@ -261,7 +239,7 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
                     text_lock = "Débloqué";
 
                 }
-                Snackbar.make(graphicOverlay, "le texte est "+text_lock,
+                Snackbar.make(graphicOverlay, "le texte est " + text_lock,
                         Snackbar.LENGTH_LONG)
                         .show();
             }
@@ -272,7 +250,9 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
         button_placeholder.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 // Code here executes on main thread after user presses button
-                user.placeholder();
+                //user.placeholder();
+                showMyDialog(OcrCaptureActivity.this);
+
             }
 
         });
@@ -280,45 +260,30 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
         final Button button_gps = findViewById(R.id.gps_button);
         button_gps.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                // Code here executes on main thread after user presses button
+                checkLocationPermission();
+                locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, OcrCaptureActivity.this, null);
+                Location loc = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                if(loc!=null){
+                    user.setLocation(loc);
+                    Geocoder gCoder = new Geocoder(context);
+                    try {
+                        List<Address> addresses = gCoder.getFromLocation(loc.getLatitude(), loc.getLongitude(), 1);
+                        Log.d("LocationTest", " Approx "+addresses);
 
-                Geocoder geocoder;
-                String bestProvider;
-                List<Address> addresses;
-                double lat;
-                double lng;
-                geocoder = new Geocoder(context, Locale.getDefault());
-                try {
-                    Location loc = getLastKnownLocation();
-                    lat = loc.getLatitude();
-                    lng = loc.getLongitude();
-                    addresses = geocoder.getFromLocation(lat, lng, 1); // Here 1 represent max location result to returned, by documents it recommended 1 to 5
-                    String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
-                    String city = addresses.get(0).getLocality();
-                    String state = addresses.get(0).getAdminArea();
-                    String country = addresses.get(0).getCountryName();
-                    String postalCode = addresses.get(0).getPostalCode();
-                    String knownName = addresses.get(0).getFeatureName();
-                    Log.w("Location", " "+address+" "+state+" "+postalCode);
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    Log.w("Location_Getter", "Location permission is not granted. Requesting permission");
-
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
-
-               // tie.setText("39A");
+                Log.d("LocationTest", " - "+loc+" - ");
+                loc = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
             }
 
         });
-        //locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        //locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
     }
 
     private void requestGpsPermission() {
 
     }
-
     /**
      * Handles the requesting of the camera permission.  This includes
      * showing a "Snackbar" message of why the permission is needed then
@@ -350,7 +315,12 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
                 .setAction(R.string.ok, listener)
                 .show();
     }
-
+    public boolean checkLocationPermission()
+    {
+        String permission = "android.permission.ACCESS_FINE_LOCATION";
+        int res = this.checkCallingOrSelfPermission(permission);
+        return (res == PackageManager.PERMISSION_GRANTED);
+    }
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         boolean b = scaleGestureDetector.onTouchEvent(e);
@@ -439,15 +409,14 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
             Log.d("OpenCV", "OpenCV library found inside package. Using it!");
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
+        checkLocationPermission();
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 400, 1, this);
+        Location loc = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        Log.d("LocationTest", " - "+loc+" - ");
+
+
         startCameraSource();
-        if(preview.getDrawingCache() != null){
 
-            Log.d("TESTMAP", "Pas null ");
-
-            //Bitmap image = preview.getBitmap();
-            //Log.d("TESTMAP", "Pas null size "+ cameraSource.getPreviewSize());
-
-        }
     }
 
     /**
@@ -493,27 +462,34 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
-        if (requestCode != RC_HANDLE_CAMERA_PERM) {
-            Log.d(TAG, "Got unexpected permission result: " + requestCode);
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-            return;
-        }
+        switch (requestCode){
+            case RC_HANDLE_CAMERA_PERM:
 
-        if (grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "Camera permission granted - initialize the camera source");
-            // we have permission, so create the camerasource
-            boolean autoFocus = getIntent().getBooleanExtra(AutoFocus,true);
-            boolean useFlash = getIntent().getBooleanExtra(UseFlash, false);
-            createCameraSource(autoFocus, useFlash);
-            return;
-        }
-        if (requestCode == 1
-                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            //  gps functionality
-        }
-        Log.e(TAG, "Permission not granted: results len = " + grantResults.length +
-                " Result code = " + (grantResults.length > 0 ? grantResults[0] : "(empty)"));
+                if (grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d(TAG, "Camera permission granted - initialize the camera source");
+                    // we have permission, so create the camerasource
+                    boolean autoFocus = getIntent().getBooleanExtra(AutoFocus,true);
+                    boolean useFlash = getIntent().getBooleanExtra(UseFlash, false);
+                    createCameraSource(autoFocus, useFlash);
+                }
+                return;
+            case RC_HANDLE_LOCATION_PERM:
+                if (grantResults.length != 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d(TAG, "Camera permission granted - initialize the camera source");
+                    // we have permission, so create the camerasource
+                    if (ContextCompat.checkSelfPermission(this,
+                            Manifest.permission.ACCESS_FINE_LOCATION)
+                            == PackageManager.PERMISSION_GRANTED) {
 
+                        //Request location updates:
+                        //String provider = "";
+                        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 400, 1, this);
+                    }
+
+                }
+                return;
+
+        }
         DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 finish();
@@ -667,5 +643,145 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
                 cameraSource.doZoom(detector.getScaleFactor());
             }
         }
+    }
+    private void showMyDialog(Context context) {
+        final Dialog dialog = new Dialog(context);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.layout);
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.setCancelable(true);
+
+        TextView textView = (TextView) dialog.findViewById(R.id.txtTitle);
+        TextView textAdress = (TextView) dialog.findViewById(R.id.adress);
+        final TextView textCode = (TextView) dialog.findViewById(R.id.editText4);
+        final TextView textDepartement = (TextView) dialog.findViewById(R.id.depart);
+        final TextView textCommune = (TextView) dialog.findViewById(R.id.commune);
+        final TextView textRegion = (TextView) dialog.findViewById(R.id.region);
+
+        textCode.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                //textRegion;
+                //textCommune;
+                //textDepartement;
+            }
+        });
+        checkLocationPermission();
+        locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, OcrCaptureActivity.this, null);
+        Location loc = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        if(user.getLocation()==null) {
+            user.setLocation(loc);
+        }
+
+        Geocoder gCoder = new Geocoder(context);
+        try {
+            List<Address> addresses = gCoder.getFromLocation(loc.getLatitude(), loc.getLongitude(), 1);
+            textAdress.setText(addresses.get(0).getFeatureName()+" "+addresses.get(0).getThoroughfare());
+            textDepartement.setText(addresses.get(0).getSubAdminArea());
+            textRegion.setText(addresses.get(0).getAdminArea());
+            textCommune.setText(addresses.get(0).getLocality());
+            textCode.setText(addresses.get(0).getPostalCode());
+            Log.d("LocationTest", " Approx "+addresses);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Button btnBtmLeft = (Button) dialog.findViewById(R.id.btnBtmLeft);
+
+        btnBtmLeft.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                try {
+                    /*URL url = new URL(API_URL);
+                    HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                    con.setRequestMethod("GET");
+                    con.connect();
+                    JSONObject js  = JsonFetcher.urlToJson(url);
+                    Log.e("Webinfo", (String) js.get("links"));
+                    */
+                    final TextView textView = (TextView) findViewById(R.id.text);
+
+                    // Instantiate the RequestQueue.
+                    RequestQueue queue = Volley.newRequestQueue(OcrCaptureActivity.this);
+                    String url ="http://www.exemple.com";
+
+                    // Request a string response from the provided URL.
+                    String query = "";
+                    try {
+                        query= URLEncoder.encode(
+                                "\""+textCommune.getText()+"\" " +
+                                        "AND \""+textCode.getText()+"\" " +
+                                        "AND \""+textDepartement.getText()+"\"" +
+                                        "AND \""+textRegion.getText()+"\"","UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                    StringRequest stringRequest = new StringRequest(Request.Method.GET, API_URL+query,
+                            new Response.Listener<String>() {
+                                @Override
+                                public void onResponse(String response) {
+                                    // Display the first 500 characters of the response string.
+                                    //textView.setText("Response is: "+ response.substring(0,500));
+                                    Log.v("OnResponse", "Buen "+response.substring(0,500));
+                                    try {
+
+                                        //JsonFetcher.responseToJson(response).get("links");
+                                        Log.v("OnResponse", "Jsoned "+JsonFetcher.responseToJson(response).get("records"));
+                                        JSONObject js  = JsonFetcher.responseToJson(response);
+                                        JSONArray ns = js.getJSONArray("records");
+                                        JSONObject fields=ns.getJSONObject(0).getJSONObject("record").getJSONObject("fields");
+                                        Log.v("OnResponse", "Jsoned "+fields.getString("insee_com"));
+                                        recherchePDL(null,null,null);
+
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+
+                                }
+                            }, new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            //textView.setText("That didn't work!");
+                            Log.e("OnResponse", "Probleme "+ error.getMessage());
+
+                        }
+                    });
+
+                    // Add the request to the RequestQueue.
+                    queue.add(stringRequest);
+
+                    //System.out.println(js.get("links"));
+                }catch (Exception e){
+                    e.printStackTrace();
+                    Log.e("Webinfo", "Probleme "+e.getMessage());
+
+                }
+
+                //dialog.dismiss();
+            }
+        });
+
+
+        /**
+         * if you want the dialog to be specific size, do the following
+         * this will cover 85% of the screen (85% width and 85% height)
+         */
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+        int dialogWidth = (int)(displayMetrics.widthPixels * 0.85);
+        int dialogHeight = (int)(displayMetrics.heightPixels * 0.85);
+        dialog.getWindow().setLayout(dialogWidth, dialogHeight);
+
+        dialog.show();
     }
 }
