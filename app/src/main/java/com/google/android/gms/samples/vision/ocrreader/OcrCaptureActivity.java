@@ -33,6 +33,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
@@ -79,8 +80,11 @@ import com.google.android.gms.samples.vision.ocrreader.ui.camera.GraphicOverlay;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
+import com.thejavageek.client.RecherchePointPortTypeClientAnd;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -118,6 +122,8 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
     public static final String AutoFocus = "AutoFocus";
     public static final String UseFlash = "UseFlash";
     public static final String TextBlockObject = "String";
+    public static String keystore;
+    public static String truststore;
 
     private CameraSource cameraSource;
     private CameraSourcePreview preview;
@@ -164,6 +170,14 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
+        //R.raw.keystore;
+        Uri path = Uri.parse("android.resource://" + getApplicationContext().getPackageName()+ "/" +  R.raw.keystore);
+        Uri path2 = Uri.parse("android.resource://" + getApplicationContext().getPackageName()+ "/" +  R.raw.truststore);
+
+        keystore = path.getPath();
+        truststore = path2.getPath();
+
+        Log.d("PathTest", " - "+path.getPath()+" - ");
 
         //this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         final Context context = getApplicationContext();
@@ -742,8 +756,8 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
                                         JSONArray ns = js.getJSONArray("records");
                                         JSONObject fields=ns.getJSONObject(0).getJSONObject("record").getJSONObject("fields");
                                         Log.v("OnResponse", "Jsoned "+fields.getString("insee_com"));
-                                        recherchePDL(null,null,null);
-
+                                        //recherchePDL(null,null,null,truststore,keystore);
+                                        RecherchePointPortTypeClientAnd.test();
                                     } catch (JSONException e) {
                                         e.printStackTrace();
                                     }

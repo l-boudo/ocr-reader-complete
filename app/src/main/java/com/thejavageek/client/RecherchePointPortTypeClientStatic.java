@@ -6,9 +6,9 @@ import android.util.Log;
 
 public class RecherchePointPortTypeClientStatic {
 
-	public static String recherchePDL(String adresseloc,String insee_code,String postal_code) {
-		String trustkeystore = "/home/x1-l/PIMA/enedis_certificat/newTrustStore.jks";
-                String keystore = "/home/x1-l/PIMA/my_certificat/keystore.jks";
+	public static String recherchePDL(String adresseloc,String insee_code,String postal_code,String trustkeystore,String keystore) {
+		//String trustkeystore = "/home/x1-l/PIMA/enedis_certificat/newTrustStore.jks";
+                //String keystore = "/home/x1-l/PIMA/my_certificat/keystore.jks";
                 
                 String truststorepass = "chenshuo";
 		String storepass = "chenshuo";
@@ -45,8 +45,8 @@ public class RecherchePointPortTypeClientStatic {
 			point = p.getPoint().get(0).id;
 		}
 		catch(Exception error) {
-			Log.e("Error","Something went wrong.");
-		              Log.e("Error",error.getMessage());
+			Log.e("ErrorWDSL","Something went wrong.");
+		              Log.e("ErrorWDSL",error.getMessage());
                       //System.out.println(error);
 //			MessageBox.Show("Custom Error Text "+error.Message); 
  			//console.error(error);
