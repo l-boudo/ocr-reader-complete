@@ -27,7 +27,7 @@ public class RecherchePointPortTypeClientStatic {
     			System.getProperties().setProperty(prop[0], prop[1]);
 		}
 		String point = null;
-		RecherchePointV20 serveur = new RecherchePointV20();
+		RecherchePointV202 serveur = new RecherchePointV202();
 		RecherchePointPortType service = serveur.getRecherchePointPort();
 		try{
 			//System.out.println(service.consulterDonneesTechniquesContractuelles("23258900141855","enedis1@wonest.com",true).getId());          

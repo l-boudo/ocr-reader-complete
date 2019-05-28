@@ -9,7 +9,7 @@ import java.io.IOException;
         import org.ksoap2.transport.HttpTransportSE;
         import org.xmlpull.v1.XmlPullParserException;
 
-public class Test {
+        public class Test {
     public class Constante {
         public static final String SOAP_ACTION = "http://api.chartlyrics.com/SearchLyricDirect";
         public static final String METHOD_NAME = "SearchLyricDirect";

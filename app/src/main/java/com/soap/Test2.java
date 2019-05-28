@@ -12,9 +12,9 @@ import org.xmlpull.v1.XmlPullParserException;
 public class Test2 {
     public class Constante {
         public static final String SOAP_ACTION = "http://www.enedis.fr/sge/b2b/services/RecherchePointV2.0";
-        public static final String METHOD_NAME = "RecherchePointV2.0";
+        public static final String METHOD_NAME = "rechercherPoint";
         public static final String NAMESPACE = "http://www.enedis.fr/sge/b2b/services";
-        public static final String URL = "http://2019wsdltest.orgfree.com/RecherchePoint-v2.0.wsdl";
+        public static final String URL = "http://localhost:8082/test/services/RecherchePointPort?wsdl";
         //public static final String URL = "http://2019wsdltest.orgfree.com/apiv1.asmx";
 
         public static final String KEY_ARTIST = "artist";
@@ -66,16 +66,6 @@ public class Test2 {
 
 //      System.out.println(obj);
 
-        System.out.println(obj.getProperty("TrackId"));
-        System.out.println(obj.getProperty("LyricChecksum"));
-        System.out.println(obj.getProperty("LyricId"));
-        System.out.println(obj.getProperty("LyricSong"));
-        System.out.println(obj.getProperty("LyricArtist"));
-        System.out.println(obj.getProperty("LyricUrl"));
-        System.out.println(obj.getProperty("LyricCovertArtUrl"));
-        System.out.println(obj.getProperty("LyricRank"));
-        System.out.println(obj.getProperty("LyricCorrectUrl"));
-        System.out.println(obj.getProperty("Lyric"));
 
     }
 

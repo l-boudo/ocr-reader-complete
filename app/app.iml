@@ -204,7 +204,5 @@
     <orderEntry type="library" name="Gradle: com.google.android.gms:play-services-phenotype:15.0.1@aar" level="project" />
     <orderEntry type="module" module-name="opencv" />
     <orderEntry type="module" module-name="opencv" />
-    <orderEntry type="module" module-name="opencv" />
-    <orderEntry type="module" module-name="opencv" />
   </component>
 </module>

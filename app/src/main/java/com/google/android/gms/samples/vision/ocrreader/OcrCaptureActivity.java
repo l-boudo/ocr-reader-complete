@@ -28,7 +28,6 @@ import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.location.Address;
 //import com.google.android.gms.location.FusedLocationProviderClient
-import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
@@ -38,8 +37,6 @@ import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
-import android.support.design.widget.TextInputEditText;
-import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -53,12 +50,10 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -77,26 +72,32 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSource;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSourcePreview;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.GraphicOverlay;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
-import com.thejavageek.client.RecherchePointPortTypeClientAnd;
+import com.soap.AsyncSoap;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.ArrayList;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Locale;
 
-import custom.JsonFetcher;
-import custom.UserInfo;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
-import static com.thejavageek.client.RecherchePointPortTypeClientStatic.recherchePDL;
+import custom.JsonFetcher;
+import custom.SSLConection;
+import custom.UserInfo;
 
 /**
  * Activity for the Ocr Detecting app.  This app detects text and displays the value with the
@@ -741,25 +742,73 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
                     }
-                    StringRequest stringRequest = new StringRequest(Request.Method.GET, API_URL+query,
+                    StringRequest stringRequest = new StringRequest(Request.Method.GET, API_URL + query,
                             new Response.Listener<String>() {
                                 @Override
                                 public void onResponse(String response) {
                                     // Display the first 500 characters of the response string.
                                     //textView.setText("Response is: "+ response.substring(0,500));
-                                    Log.v("OnResponse", "Buen "+response.substring(0,500));
+                                    Log.v("OnResponse", "Buen " + response.substring(0, 500));
                                     try {
 
                                         //JsonFetcher.responseToJson(response).get("links");
-                                        Log.v("OnResponse", "Jsoned "+JsonFetcher.responseToJson(response).get("records"));
-                                        JSONObject js  = JsonFetcher.responseToJson(response);
+                                        Log.v("OnResponse", "Jsoned " + JsonFetcher.responseToJson(response).get("records"));
+                                        JSONObject js = JsonFetcher.responseToJson(response);
                                         JSONArray ns = js.getJSONArray("records");
-                                        JSONObject fields=ns.getJSONObject(0).getJSONObject("record").getJSONObject("fields");
-                                        Log.v("OnResponse", "Jsoned "+fields.getString("insee_com"));
+                                        JSONObject fields = ns.getJSONObject(0).getJSONObject("record").getJSONObject("fields");
+                                        Log.v("OnResponse", "Jsoned " + fields.getString("insee_com"));
                                         //recherchePDL(null,null,null,truststore,keystore);
-                                        RecherchePointPortTypeClientAnd.test();
-                                    } catch (JSONException e) {
+                                        //SoapTest.run2(truststore,keystore);
+                                        //RecherchePointPortTypeClientAnd.test();
+
+                                        InputStream stream = getResources().openRawResource(R.raw.truststorebksv1);
+                                        InputStream stream2 = getResources().openRawResource(R.raw.keystorebksv1);
+
+                                        KeyStore trustStore;
+                                        KeyStore keyStore;
+
+                                        try {
+
+                                            trustStore = KeyStore.getInstance("BKS");
+                                            keyStore = KeyStore.getInstance("BKS");
+
+                                            trustStore.load(stream, "chenshuo".toCharArray());
+                                            keyStore.load(stream2, "chenshuo".toCharArray());
+
+                                            KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
+                                                    KeyManagerFactory.getDefaultAlgorithm());
+
+                                            kmfactory.init(keyStore, "chenshuo".toCharArray());
+
+                                            TrustManagerFactory tmf=TrustManagerFactory
+                                                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+
+                                            tmf.init(trustStore);
+
+                                            SSLContext sslContext=SSLContext.getInstance("TLSv1.2");
+
+                                            sslContext.init(kmfactory.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+
+                                            SSLSocketFactory factory=sslContext.getSocketFactory();
+
+                                            //sslContext.createSSLEngine();
+                                            SSLConection.allowAllSSL();
+
+                                            new AsyncSoap().execute(truststore,keystore);
+
+
+
+
+                                        } catch (Exception e) {
+                                            Log.e("ERROR", "message", e);
+
+                                        }
+
+
+                                    } catch (Exception e) {
                                         e.printStackTrace();
+                                        Log.e("Excepted", "Probleme " + e.getMessage());
+
                                     }
 
                                 }
@@ -767,7 +816,7 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
                         @Override
                         public void onErrorResponse(VolleyError error) {
                             //textView.setText("That didn't work!");
-                            Log.e("OnResponse", "Probleme "+ error.getMessage());
+                            Log.e("OnResponse", "Probleme " + error.getMessage());
 
                         }
                     });
