@@ -54,6 +54,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -109,8 +110,9 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
     private static final String TAG = "OcrCaptureActivity";
     int MY_PERMISSION_ACCESS_COARSE_LOCATION = 1;
     int MY_PERMISSION_ACCESS_FINE_LOCATION = 2;
-    public static String API_URL2 = "https://public.opendatasoft.com/api/v2/catalog/datasets/correspondance-code-insee-code-postal";
     public static String API_URL = "https://public.opendatasoft.com/api/v2/catalog/datasets/correspondance-code-insee-code-postal/records?where=";
+    public static String API_URL2 = "https://us-central1-restprojet.cloudfunctions.net/rechercherPoint?address=";
+    //public static String API_ENENDIS_URL = "https://us-central1-restprojet.cloudfunctions.net/rechercherPoint?address=17%20rue%20de%20la%20huchette&zipCode=75005&inseeCode=75105&serieNumber=783";
 
     // Intent request code to handle updating play services if needed.
     private static final int RC_HANDLE_GMS = 9001;
@@ -196,6 +198,7 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
 
         //final TextInputEditText tie = (TextInputEditText) findViewById(R.id.adress_input);
         user = new UserInfo(t);
+        user.setPdlt((TextView) findViewById(R.id.textView2));
         // Set good defaults for capturing text.
         boolean autoFocus = true;
         boolean useFlash = false;
@@ -667,11 +670,12 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
         dialog.setCancelable(true);
 
         TextView textView = (TextView) dialog.findViewById(R.id.txtTitle);
-        TextView textAdress = (TextView) dialog.findViewById(R.id.adress);
+        final TextView textAdress = (TextView) dialog.findViewById(R.id.adress);
         final TextView textCode = (TextView) dialog.findViewById(R.id.editText4);
         final TextView textDepartement = (TextView) dialog.findViewById(R.id.depart);
         final TextView textCommune = (TextView) dialog.findViewById(R.id.commune);
         final TextView textRegion = (TextView) dialog.findViewById(R.id.region);
+        final TextView textView2 = (TextView) dialog.findViewById(R.id.textView2);
 
         textCode.addTextChangedListener(new TextWatcher() {
             @Override
@@ -716,21 +720,12 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
         btnBtmLeft.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 try {
-                    /*URL url = new URL(API_URL);
-                    HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                    con.setRequestMethod("GET");
-                    con.connect();
-                    JSONObject js  = JsonFetcher.urlToJson(url);
-                    Log.e("Webinfo", (String) js.get("links"));
-                    */
+
                     final TextView textView = (TextView) findViewById(R.id.text);
 
                     // Instantiate the RequestQueue.
                     RequestQueue queue = Volley.newRequestQueue(OcrCaptureActivity.this);
-                    String url ="http://www.exemple.com";
-
                     // Request a string response from the provided URL.
                     String query = "";
                     try {
@@ -746,65 +741,56 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
                             new Response.Listener<String>() {
                                 @Override
                                 public void onResponse(String response) {
-                                    // Display the first 500 characters of the response string.
-                                    //textView.setText("Response is: "+ response.substring(0,500));
                                     Log.v("OnResponse", "Buen " + response.substring(0, 500));
                                     try {
 
-                                        //JsonFetcher.responseToJson(response).get("links");
+                                        // execution de la requete pour le code insee
                                         Log.v("OnResponse", "Jsoned " + JsonFetcher.responseToJson(response).get("records"));
                                         JSONObject js = JsonFetcher.responseToJson(response);
                                         JSONArray ns = js.getJSONArray("records");
                                         JSONObject fields = ns.getJSONObject(0).getJSONObject("record").getJSONObject("fields");
                                         Log.v("OnResponse", "Jsoned " + fields.getString("insee_com"));
-                                        //recherchePDL(null,null,null,truststore,keystore);
-                                        //SoapTest.run2(truststore,keystore);
-                                        //RecherchePointPortTypeClientAnd.test();
-
-                                        InputStream stream = getResources().openRawResource(R.raw.truststorebksv1);
-                                        InputStream stream2 = getResources().openRawResource(R.raw.keystorebksv1);
-
-                                        KeyStore trustStore;
-                                        KeyStore keyStore;
-
-                                        try {
-
-                                            trustStore = KeyStore.getInstance("BKS");
-                                            keyStore = KeyStore.getInstance("BKS");
-
-                                            trustStore.load(stream, "chenshuo".toCharArray());
-                                            keyStore.load(stream2, "chenshuo".toCharArray());
-
-                                            KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
-                                                    KeyManagerFactory.getDefaultAlgorithm());
-
-                                            kmfactory.init(keyStore, "chenshuo".toCharArray());
-
-                                            TrustManagerFactory tmf=TrustManagerFactory
-                                                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
-
-                                            tmf.init(trustStore);
-
-                                            SSLContext sslContext=SSLContext.getInstance("TLSv1.2");
-
-                                            sslContext.init(kmfactory.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
-
-                                            SSLSocketFactory factory=sslContext.getSocketFactory();
-
-                                            //sslContext.createSSLEngine();
-                                            SSLConection.allowAllSSL();
-
-                                            new AsyncSoap().execute(truststore,keystore);
+                                        RequestQueue requestQueue;
 
 
+                                        requestQueue =Volley.newRequestQueue(OcrCaptureActivity.this);;
+
+                                        //requestQueue.start();
+                                        //TODO:numero de serie
+                                        Log.v("Matricule",user.getMatricule());
+                                        String query2= URLEncoder.encode(textAdress.getText().toString(),"UTF-8").replace("+", "%20")
+                                                +"&zipCode="+textCode.getText()
+                                                +"&inseeCode="+fields.getString("insee_com")
+                                                +"&serieNumber="+user.getMatricule();
 
 
-                                        } catch (Exception e) {
-                                            Log.e("ERROR", "message", e);
+                                        StringRequest stringRequest2 = new StringRequest(Request.Method.GET, API_URL2+query2,
+                                                new Response.Listener<String>() {
+                                                    @Override
+                                                    public void onResponse(String response) {
+                                                        Log.v("OnResponse", "Enedis_OK " + response);
+                                                        try {
 
-                                        }
+                                                            JSONObject js = JsonFetcher.responseToJson(response);
+                                                            String pdl;
+                                                            pdl = String.valueOf(js.getJSONObject("points").getJSONObject("point").getJSONObject("attributes").get("id"));
+                                                            Log.v("pdl",pdl );
+                                                            user.setPdl(pdl);
+                                                            ((TextView) dialog.findViewById(R.id.textView2))
+                                                                    .setText("");
+                                                        } catch (Exception e) {
+                                                            e.printStackTrace();
+                                                        }
 
-
+                                                    }
+                                                },
+                                                new Response.ErrorListener() {
+                                                    @Override
+                                                    public void onErrorResponse(VolleyError error) {
+                                                        // Handle error
+                                                    }
+                                                });
+                                        requestQueue.add(stringRequest2);
                                     } catch (Exception e) {
                                         e.printStackTrace();
                                         Log.e("Excepted", "Probleme " + e.getMessage());
@@ -824,14 +810,13 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
                     // Add the request to the RequestQueue.
                     queue.add(stringRequest);
 
-                    //System.out.println(js.get("links"));
                 }catch (Exception e){
                     e.printStackTrace();
                     Log.e("Webinfo", "Probleme "+e.getMessage());
 
                 }
 
-                //dialog.dismiss();
+                dialog.dismiss();
             }
         });
 

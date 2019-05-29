@@ -5,6 +5,9 @@ import android.widget.TextView;
 
 public class UserInfo {
     private TextView t;
+    private TextView pdlt;
+
+    private String pdl;
     private Location location;
     private String no_serie;
     private int conso_hc;
@@ -80,5 +83,21 @@ public class UserInfo {
     }
     public Location getLocation(){
         return location;
+    }
+    public String getMatricule(){
+        int taille = no_serie.length();
+        if(taille<14){
+            return no_serie.substring(taille-3,taille);
+        }
+        return no_serie.substring(taille-5,taille-2);
+    }
+
+    public void setPdl(String pdl) {
+        this.pdl = pdl;
+        pdlt.setText("PDL => "+pdl);
+    }
+    public void setPdlt(TextView pdlt){this.pdlt = pdlt;}
+    public String getPdl() {
+        return pdl;
     }
 }

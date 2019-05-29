@@ -74,10 +74,9 @@
     </com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSourcePreview>
 
     <TextView
-        android:id="@+id/address"
+        android:id="@+id/textView2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:baselineAligned="false"
-        android:text="@string/add" />
+        android:text="@string/textview" />
 
 </LinearLayout>
