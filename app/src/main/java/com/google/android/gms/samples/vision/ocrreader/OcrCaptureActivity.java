@@ -56,9 +56,6 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -75,7 +72,6 @@ import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSourcePre
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.GraphicOverlay;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
-import com.soap.AsyncSoap;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,6 +108,7 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
     int MY_PERMISSION_ACCESS_FINE_LOCATION = 2;
     public static String API_URL = "https://public.opendatasoft.com/api/v2/catalog/datasets/correspondance-code-insee-code-postal/records?where=";
     public static String API_URL2 = "https://us-central1-restprojet.cloudfunctions.net/rechercherPoint?address=";
+    public static String API_URL3 ="https://us-central1-restprojet.cloudfunctions.net/consultationDonneesTechniquesContractuelles?pointId=";
     //public static String API_ENENDIS_URL = "https://us-central1-restprojet.cloudfunctions.net/rechercherPoint?address=17%20rue%20de%20la%20huchette&zipCode=75005&inseeCode=75105&serieNumber=783";
 
     // Intent request code to handle updating play services if needed.
@@ -151,21 +148,6 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
 
     private FusedLocationProviderClient fusedLocationClient;
 
-    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS: {
-                    Log.i("OpenCV", "OpenCV loaded successfully");
-                }
-                break;
-                default: {
-                    super.onManagerConnected(status);
-                }
-                break;
-            }
-        }
-    };
 
     /**
      * Initializes the UI and creates the detector pipeline.
@@ -420,13 +402,6 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
     @Override
     protected void onResume() {
         super.onResume();
-        if (!OpenCVLoader.initDebug()) {
-            Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
-            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
-        } else {
-            Log.d("OpenCV", "OpenCV library found inside package. Using it!");
-            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
-        }
         checkLocationPermission();
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 400, 1, this);
         Location loc = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
@@ -751,9 +726,7 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
                                         JSONObject fields = ns.getJSONObject(0).getJSONObject("record").getJSONObject("fields");
                                         Log.v("OnResponse", "Jsoned " + fields.getString("insee_com"));
                                         RequestQueue requestQueue;
-
-
-                                        requestQueue =Volley.newRequestQueue(OcrCaptureActivity.this);;
+                                        requestQueue =Volley.newRequestQueue(OcrCaptureActivity.this);
 
                                         //requestQueue.start();
                                         //TODO:numero de serie
@@ -770,14 +743,53 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
                                                     public void onResponse(String response) {
                                                         Log.v("OnResponse", "Enedis_OK " + response);
                                                         try {
+                                                            RequestQueue requestQueue3;
 
+                                                            requestQueue3 =Volley.newRequestQueue(OcrCaptureActivity.this);
                                                             JSONObject js = JsonFetcher.responseToJson(response);
                                                             String pdl;
                                                             pdl = String.valueOf(js.getJSONObject("points").getJSONObject("point").getJSONObject("attributes").get("id"));
                                                             Log.v("pdl",pdl );
                                                             user.setPdl(pdl);
-                                                            ((TextView) dialog.findViewById(R.id.textView2))
-                                                                    .setText("");
+                                                            //((TextView) dialog.findViewById(R.id.textView2)).setText("");
+                                                            StringRequest stringRequest3 = new StringRequest(Request.Method.GET, API_URL3+pdl+"&autorisationClient=false",
+                                                                    new Response.Listener<String>() {
+                                                                        @Override
+                                                                        public void onResponse(String response) {
+                                                                            Log.v("OnResponse", "Enedis_OK2 " + response);
+                                                                            try {
+
+                                                                                JSONObject js = JsonFetcher.responseToJson(response);
+                                                                                Log.v("Mesures_Detaille",js.toString() );
+                                                                                JSONObject dispositifComptage =  js.getJSONObject("point").getJSONObject("situationComptage").getJSONObject("dispositifComptage");
+                                                                                JSONObject alimentationPrincipale =   js.getJSONObject("point").getJSONObject("situationAlimentation").getJSONObject("alimentationPrincipale");
+
+                                                                                JSONObject puissance = alimentationPrincipale.getJSONObject("puissanceRaccordementSoutirage");
+                                                                                JSONObject tension = alimentationPrincipale.getJSONObject("tensionLivraison");
+                                                                                JSONObject calibre =dispositifComptage.getJSONObject("disjoncteur").getJSONObject("calibre");
+
+                                                                                JSONObject typeComptage =dispositifComptage.getJSONObject("typeComptage");
+                                                                                user.setinfo(
+                                                                                        typeComptage.getString("libelle"),
+                                                                                        puissance.getString("valeur")+puissance.getString("unite"),
+                                                                                        calibre.getString("libelle"),
+                                                                                        tension.getString("libelle")
+                                                                                );
+                                                                                Log.v("OnResponse", "Enedis_OK_3 info set");
+
+                                                                            } catch (Exception e) {
+                                                                                e.printStackTrace();
+                                                                            }
+
+                                                                        }
+                                                                    },
+                                                                    new Response.ErrorListener() {
+                                                                        @Override
+                                                                        public void onErrorResponse(VolleyError error) {
+                                                                            // Handle error
+                                                                        }
+                                                                    });
+                                                            requestQueue3.add(stringRequest3);
                                                         } catch (Exception e) {
                                                             e.printStackTrace();
                                                         }

@@ -1,6 +1,7 @@
 package custom;
 
 import android.location.Location;
+import android.util.Log;
 import android.widget.TextView;
 
 public class UserInfo {
@@ -8,6 +9,7 @@ public class UserInfo {
     private TextView pdlt;
 
     private String pdl;
+    private String[] infos;
     private Location location;
     private String no_serie;
     private int conso_hc;
@@ -95,6 +97,17 @@ public class UserInfo {
     public void setPdl(String pdl) {
         this.pdl = pdl;
         pdlt.setText("PDL => "+pdl);
+    }
+    public void setinfo(String ... infos ) {
+        this.infos = infos;
+        String out = "";
+        out+=infos[0]+"\n";
+        out+="PDL       : "+pdl+"\n";
+        out+="Puissance : "+infos[1]+"\n";
+        out+="Calibre   : "+infos[2]+"\n";
+        out+="Tension    : "+infos[3]+"\n";
+        Log.v("Info","Info K");
+        pdlt.setText(out);
     }
     public void setPdlt(TextView pdlt){this.pdlt = pdlt;}
     public String getPdl() {
