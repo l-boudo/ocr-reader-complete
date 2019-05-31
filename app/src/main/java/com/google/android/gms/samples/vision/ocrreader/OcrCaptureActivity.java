@@ -743,15 +743,13 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Locat
                                                     public void onResponse(String response) {
                                                         Log.v("OnResponse", "Enedis_OK " + response);
                                                         try {
-                                                            RequestQueue requestQueue3;
-
-                                                            requestQueue3 =Volley.newRequestQueue(OcrCaptureActivity.this);
                                                             JSONObject js = JsonFetcher.responseToJson(response);
                                                             String pdl;
                                                             pdl = String.valueOf(js.getJSONObject("points").getJSONObject("point").getJSONObject("attributes").get("id"));
                                                             Log.v("pdl",pdl );
                                                             user.setPdl(pdl);
-                                                            //((TextView) dialog.findViewById(R.id.textView2)).setText("");
+                                                            RequestQueue requestQueue3;
+                                                            requestQueue3 =Volley.newRequestQueue(OcrCaptureActivity.this);
                                                             StringRequest stringRequest3 = new StringRequest(Request.Method.GET, API_URL3+pdl+"&autorisationClient=false",
                                                                     new Response.Listener<String>() {
                                                                         @Override

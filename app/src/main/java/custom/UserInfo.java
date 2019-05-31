@@ -96,7 +96,7 @@ public class UserInfo {
 
     public void setPdl(String pdl) {
         this.pdl = pdl;
-        pdlt.setText("PDL => "+pdl);
+        //pdlt.setText("PDL => "+pdl);
     }
     public void setinfo(String ... infos ) {
         this.infos = infos;
